@@ -2,7 +2,7 @@ menu "dalangs_TFT"
 
     choice DALANGS_LCD_DRIVER
         prompt "LCD controller"
-        default DALANGS_LCD_ST7789
+        default DALANGS_LCD_ILI9341
         help
             Select the controller on the 2.8 inch 240x320 SPI module.
             The red modules are often ILI9341; ST7789 modules are usually black.

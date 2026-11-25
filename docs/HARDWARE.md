@@ -7,9 +7,9 @@
 - **Display**: 2.8 inch 240x320 SPI TFT, ST7789 or ILI9341.
 - **Touch**: XPT2046 resistive controller.
 
-The red 2.8 inch modules with a 14-pin header are frequently **ILI9341**.
-Black modules are frequently **ST7789**. Confirm the controller before
-blaming the firmware. The driver is selected at build time:
+The red 2.8 inch modules with a 14-pin header are frequently **ILI9341**, so
+that is the default. Black modules are frequently **ST7789**. Confirm the
+controller before blaming the firmware. The driver is selected at build time:
 
 ```sh
 make menuconfig

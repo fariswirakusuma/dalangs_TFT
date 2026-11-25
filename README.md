@@ -127,9 +127,10 @@ board is required. Hardware checks are in [docs/TESTING.md](docs/TESTING.md).
 
 ## Limitations
 
-- ST7789 vs ILI9341 must match the panel. Select it in `menuconfig` under
-  `dalangs_TFT -> LCD controller`. Wrong choice usually means a blank or noisy
-  screen, not a crash.
+- ST7789 vs ILI9341 must match the panel. The default is ILI9341 because the
+  red 2.8 inch module in this build is usually ILI9341. Select the other one in
+  `menuconfig` under `dalangs_TFT -> LCD controller`. Wrong choice usually means
+  a blank or noisy screen, not a crash.
 - The XPT2046 needs per-board calibration; defaults are only a starting point.
 - The camera preview uses a single buffer. Heavy load can tear the image; this is
   acceptable for a tuner, and the upgrade path is documented in the source.

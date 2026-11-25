@@ -11,7 +11,7 @@
 #include "pins.h"
 
 #if CONFIG_DALANGS_LCD_ILI9341
-#include "esp_lcd_panel_ili9341.h"
+#include "esp_lcd_ili9341.h"
 #endif
 
 static const char *TAG = "DISPLAY";
