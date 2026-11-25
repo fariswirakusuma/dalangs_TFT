@@ -1,0 +1,25 @@
+menu "dalangs_TFT"
+
+    choice DALANGS_LCD_DRIVER
+        prompt "LCD controller"
+        default DALANGS_LCD_ST7789
+        help
+            Select the controller on the 2.8 inch 240x320 SPI module.
+            The red modules are often ILI9341; ST7789 modules are usually black.
+            If colors are wrong or the image is shifted, try the other option.
+
+        config DALANGS_LCD_ST7789
+            bool "ST7789"
+
+        config DALANGS_LCD_ILI9341
+            bool "ILI9341"
+    endchoice
+
+    config DALANGS_LCD_INVERT_COLOR
+        bool "Invert panel colors"
+        default y
+        help
+            Most IPS 2.8 inch modules need color inversion. Disable if the
+            image looks like a photographic negative.
+
+endmenu

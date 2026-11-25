@@ -1,0 +1,9 @@
+## IDF Component Manager Manifest File
+## Pin major versions; the exact resolved versions are recorded in dependencies.lock.
+dependencies:
+  idf: ">=6.1"
+  lvgl/lvgl: "~8.4.0"
+  espressif/esp_lvgl_port: "^2.9.0"
+  espressif/esp32-camera: "^2.1.8"
+  espressif/esp_lcd_ili9341: "^2.1.0"
+  atanisoft/esp_lcd_touch_xpt2046: "^1.0.6"

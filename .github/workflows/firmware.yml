@@ -1,0 +1,48 @@
+name: Firmware
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: firmware-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  host-tests:
+    name: Host unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run tests
+        run: ./test/run.sh
+
+  build:
+    name: ESP32-S3 build
+    runs-on: ubuntu-latest
+    needs: host-tests
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # TODO: pin the exact IDF patch once the project is tagged.
+      - name: Build with ESP-IDF
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v6.1
+          target: esp32s3
+          command: idf.py build
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: dalangs-tft-firmware
+          path: |
+            build/*.bin
+            build/*.elf
+            build/*.map
+          if-no-files-found: error

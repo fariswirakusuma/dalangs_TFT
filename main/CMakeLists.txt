@@ -1,0 +1,34 @@
+idf_component_register(
+    SRCS
+        "main.c"
+        "src/board_display.c"
+        "src/board_touch.c"
+        "src/camera_tuner.c"
+        "src/cam_params.c"
+        "src/system_monitor.c"
+        "src/ui_model.c"
+        "src/ui_host.c"
+        "src/wasm_host.c"
+    INCLUDE_DIRS
+        "include"
+        "src"
+    REQUIRES
+        driver
+        esp_lcd
+        esp_lvgl_port
+        lvgl
+        esp32-camera
+        esp_lcd_touch
+        esp_lcd_touch_xpt2046
+        esp_lcd_ili9341
+        wasm3
+        esp_timer
+        esp_psram
+        heap
+    EMBED_FILES
+        "wasm/basic_sliders.wasm"
+        "wasm/fx_buttons.wasm"
+        "wasm/live_cam.wasm"
+        "wasm/draw_pad.wasm"
+        "wasm/bouncing_ball.wasm"
+)
