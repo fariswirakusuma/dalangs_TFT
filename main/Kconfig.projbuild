@@ -23,10 +23,11 @@ menu "dalangs_TFT"
             image looks like a photographic negative.
 
     config DALANGS_LCD_SELF_TEST
-        bool "Show color bars for 1.5 s at boot"
+        bool "Show full-screen colors at boot"
         default n
         help
-            Draws eight solid color bars before LVGL starts. Use this to
-            separate a panel/wiring fault from an application fault.
+            Fills the panel with red, green, blue, white, black, and gray
+            before LVGL starts. Use this to separate a panel/wiring fault
+            from an application fault.
 
 endmenu

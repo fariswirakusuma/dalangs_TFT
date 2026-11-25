@@ -51,7 +51,7 @@ Run these in order after flashing. Record the result in the PR.
 | Symptom | First check |
 | --- | --- |
 | White or black screen | LCD controller choice, backlight pin |
-| Garbage/static on screen | Wire RESET to IO0, lower `LCD_PIXEL_CLOCK_HZ` to 10-20 MHz, check DC/CS |
+| Garbage/static on screen | Wire RESET to IO0, lower `LCD_PIXEL_CLOCK_HZ`, check DC/CS, try `LCD_SPI_MODE 3` |
 | Colors inverted | `DALANGS_LCD_INVERT_COLOR`, `LCD_RGB_ORDER_BGR` |
 | Image shifted or wrapped | Wrong controller, reduce `LCD_PIXEL_CLOCK_HZ` |
 | Touch X/Y swapped | `TOUCH_SWAP_XY` |
@@ -71,9 +71,10 @@ make lcd-selftest
 make build flash monitor
 ```
 
-The panel shows eight solid bars for 1.5 seconds before LVGL starts. If the
-bars are clean, the panel and SPI wiring are good. If they are noise, fix the
-wiring/controller before debugging the UI. Turn it off with:
+The panel shows red, green, blue, white, black, and gray full-screen fills
+before LVGL starts. If the colors are clean, the panel and SPI wiring are good.
+If they are noise or all white, fix the wiring/controller before debugging the
+UI. Turn it off with:
 
 ```sh
 make lcd-selftest-off

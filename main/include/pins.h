@@ -61,12 +61,15 @@
 #define UI_V_RES LCD_V_RES
 #endif
 
-#define LCD_PIXEL_CLOCK_HZ (20 * 1000 * 1000)
+#define LCD_PIXEL_CLOCK_HZ (10 * 1000 * 1000)
 #define LCD_CMD_BITS 8
 #define LCD_PARAM_BITS 8
 
 /* Most 2.8 inch IPS modules use BGR order. Swap if red and blue are reversed. */
 #define LCD_RGB_ORDER_BGR 1
+
+/* ILI9341 supports mode 0 and 3. Try 3 if mode 0 shows noise. */
+#define LCD_SPI_MODE 0
 
 /* Some panels need a horizontal/vertical mirror after rotation. */
 #define LCD_MIRROR_X 0
