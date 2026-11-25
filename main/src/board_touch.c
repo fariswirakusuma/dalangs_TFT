@@ -73,7 +73,8 @@ static void touch_process(esp_lcd_touch_handle_t tp, uint16_t *x, uint16_t *y, u
 
 #if CONFIG_DALANGS_TOUCH_DEBUG
         if (log_now) {
-            ESP_LOGI(TAG, "raw=(%u,%u) -> screen=(%d,%d)", x[i], y[i], out_x, out_y);
+            ESP_LOGI(TAG, "points=%u raw=(%u,%u) -> screen=(%d,%d)", *point_num, x[i], y[i], out_x,
+                     out_y);
         }
 #endif
 

@@ -31,6 +31,9 @@ static lv_obj_t *s_panel;
 static lv_obj_t *s_content;
 static lv_obj_t *s_tabs[APPLET_COUNT];
 static lv_timer_t *s_tick_timer;
+#if CONFIG_DALANGS_TOUCH_DEBUG
+static lv_obj_t *s_touch_marker;
+#endif
 static lv_img_dsc_t s_camera_desc;
 static uint8_t *s_canvas_buf;
 static uint32_t s_last_frame_id;
@@ -75,7 +78,11 @@ static void style_tab(int applet_id, bool selected)
 static void tab_event_cb(lv_event_t *event)
 {
     int applet_id = (int)(intptr_t)lv_event_get_user_data(event);
-    if (applet_id != s_applet) {
+    lv_event_code_t code = lv_event_get_code(event);
+#if CONFIG_DALANGS_TOUCH_DEBUG
+    ESP_LOGI(TAG, "tab event id=%d code=%d", applet_id, code);
+#endif
+    if (code == LV_EVENT_CLICKED && applet_id != s_applet) {
         ui_host_switch_applet(applet_id);
     }
 }
@@ -92,6 +99,9 @@ static void slider_event_cb(lv_event_t *event)
         lv_label_set_text_fmt(value_label, "%d", value);
     }
 
+#if CONFIG_DALANGS_TOUCH_DEBUG
+    ESP_LOGI(TAG, "slider %d = %d", widget_id, value);
+#endif
     wasm_host_event(widget_id, value);
 }
 
@@ -222,6 +232,26 @@ static void camera_timer_cb(lv_timer_t *timer)
         lv_obj_invalidate(s_camera_img);
     }
 }
+
+#if CONFIG_DALANGS_TOUCH_DEBUG
+static void touch_marker_timer_cb(lv_timer_t *timer)
+{
+    (void)timer;
+    lv_indev_t *indev = lv_indev_get_next(NULL);
+    if (indev == NULL || s_touch_marker == NULL) {
+        return;
+    }
+
+    if (indev->proc.state == LV_INDEV_STATE_PRESSED) {
+        lv_point_t point;
+        lv_indev_get_point(indev, &point);
+        lv_obj_set_pos(s_touch_marker, point.x - 5, point.y - 5);
+        lv_obj_clear_flag(s_touch_marker, LV_OBJ_FLAG_HIDDEN);
+    } else {
+        lv_obj_add_flag(s_touch_marker, LV_OBJ_FLAG_HIDDEN);
+    }
+}
+#endif
 
 static void tick_timer_cb(lv_timer_t *timer)
 {
@@ -403,6 +433,9 @@ void ui_host_switch_applet(int applet_id)
     if (!canvas) {
         render_model();
     }
+
+    ESP_LOGI(TAG, "applet %d canvas=%d panel_hidden=%d widgets=%d tab_y=%d", applet_id, canvas,
+             lv_obj_has_flag(s_panel, LV_OBJ_FLAG_HIDDEN), ui_model_count(), UI_V_RES - UI_TAB_BAR_H);
 }
 
 esp_err_t ui_host_init(void)
@@ -481,7 +514,7 @@ esp_err_t ui_host_init(void)
 
     lv_obj_t *tabbar = make_plain(s_root);
     lv_obj_set_size(tabbar, UI_H_RES, UI_TAB_BAR_H);
-    lv_obj_set_pos(tabbar, 0, UI_V_RES - UI_TAB_BAR_H);
+    lv_obj_set_pos(tabbar, 0, UI_V_RES - UI_TAB_BAR_MARGIN_BOTTOM - UI_TAB_BAR_H);
     lv_obj_set_flex_flow(tabbar, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(tabbar, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_all(tabbar, 1, 0);
@@ -494,7 +527,9 @@ esp_err_t ui_host_init(void)
         lv_obj_set_style_shadow_width(tab, 0, 0);
         lv_obj_set_style_border_width(tab, 0, 0);
         lv_obj_set_user_data(tab, (void *)(intptr_t)i);
-        lv_obj_add_event_cb(tab, tab_event_cb, LV_EVENT_CLICKED, (void *)(intptr_t)i);
+        lv_obj_add_flag(tab, LV_OBJ_FLAG_CLICKABLE);
+        lv_obj_set_ext_click_area(tab, 4);
+        lv_obj_add_event_cb(tab, tab_event_cb, LV_EVENT_ALL, (void *)(intptr_t)i);
         lv_obj_t *label = lv_label_create(tab);
         lv_label_set_text(label, s_tab_labels[i]);
         lv_obj_center(label);
@@ -502,6 +537,20 @@ esp_err_t ui_host_init(void)
         style_tab(i, false);
     }
 
+#if CONFIG_DALANGS_TOUCH_DEBUG
+    s_touch_marker = lv_obj_create(s_root);
+    lv_obj_remove_style_all(s_touch_marker);
+    lv_obj_set_size(s_touch_marker, 10, 10);
+    lv_obj_set_style_radius(s_touch_marker, 5, 0);
+    lv_obj_set_style_bg_color(s_touch_marker, lv_color_hex(0xFF0000), 0);
+    lv_obj_set_style_bg_opa(s_touch_marker, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_width(s_touch_marker, 0, 0);
+    lv_obj_clear_flag(s_touch_marker, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_flag(s_touch_marker, LV_OBJ_FLAG_HIDDEN);
+    lv_timer_create(touch_marker_timer_cb, 50, NULL);
+#endif
+
+    lv_obj_move_foreground(tabbar);
     s_tick_timer = lv_timer_create(tick_timer_cb, 33, NULL);
     lv_timer_create(camera_timer_cb, 100, NULL);
     lv_timer_create(status_timer_cb, 1000, NULL);
