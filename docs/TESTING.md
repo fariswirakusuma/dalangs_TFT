@@ -12,6 +12,9 @@ This compiles and runs:
 
 - `test/test_cam_params.c` — defaults, clamping, unknown parameter rejection.
 - `test/test_ui_model.c` — widget ids, range swap, label truncation, overflow.
+- `test/test_wasm_abi.c` — loads every committed applet with wasm3, links the
+  real host signatures to stubs, calls `app_init`, `app_event`, `app_tick`, and
+  `app_touch`, and checks the resulting widget and parameter calls.
 - `test/check_wasm.py` — validates every committed `.wasm`: magic, memory
   export, required exports, allowed imports, and a 64 KB size budget.
 
