@@ -61,7 +61,31 @@ there and update this table in the same commit.
 
 `PWDN` and `RESET` are tied off on the common camera module.
 
-## Reserved pins
+### 2.8 inch 14-pin module to the board
+
+The board's LCD header is 8 pins. Wire the red 14-pin module like this:
+
+| TFT module pin | ESP32-S3-CAM pin | Note |
+| --- | --- | --- |
+| VCC | 3V3 | 3.3 V only |
+| GND | GND | Common ground |
+| CS | IO47 | LCD chip select |
+| RESET | IO0 | Shared with BOOT |
+| DC | IO45 | Data/command |
+| MOSI / SDI | IO41 | LCD header SDA |
+| SCK | IO42 | LCD header SCL |
+| LED | IO21 | Backlight control |
+| MISO | IO14 | Optional LCD read; also touch T_DO |
+| T_CLK | IO42 | Shared with LCD SCK |
+| T_CS | IO2 | Touch chip select |
+| T_DIN | IO41 | Shared with LCD MOSI |
+| T_DO | IO14 | Shared with LCD MISO |
+| T_IRQ | — | Not connected; polling is used |
+
+Do not connect the touch and LCD MISO outputs to different pins and then wire
+both to IO14 by mistake; they are one shared SPI MISO line.
+
+## Board pins and conflicts
 
 | GPIO | Why to avoid |
 | --- | --- |
@@ -83,8 +107,10 @@ console on 43/44 is untouched and remains available over the UART USB-C port.
 ## Power and signal notes
 
 - The panel and XPT2046 are **3.3 V** devices. Do not apply 5 V to logic pins.
-- Backlight current depends on the module. Use a transistor or a series resistor
-  sized for the panel; a GPIO is a control signal, not a power source.
+- Backlight current depends on the module. The 2.8 inch modules normally have a
+  backlight transistor on the LED pin; if yours exposes the LED anode directly,
+  add a transistor or a series resistor. A GPIO is a control signal, not a
+  power source for a bare LED string.
 - Keep the camera FPC away from the SPI clock line. Long unshielded wiring on
   PCLK, VSYNC, and HREF is the usual cause of a striped or missing preview.
 - Use a short, solid ground return between the TFT module and the ESP32-S3.
