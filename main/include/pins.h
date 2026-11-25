@@ -48,10 +48,10 @@
 #define LCD_PIN_RST 0
 #define LCD_PIN_BCKL 21
 
-/* Native panel resolution. The UI is rotated to landscape. */
-#define LCD_H_RES 240
-#define LCD_V_RES 320
-#define LCD_LANDSCAPE 1
+/* Native panel resolution: this module is 320x240 landscape. */
+#define LCD_H_RES 320
+#define LCD_V_RES 240
+#define LCD_LANDSCAPE 0
 
 #if LCD_LANDSCAPE
 #define UI_H_RES LCD_V_RES
@@ -76,7 +76,7 @@
 #endif
 
 /* Some panels need a horizontal/vertical mirror after rotation. */
-#define LCD_MIRROR_X 0
+#define LCD_MIRROR_X 1
 #define LCD_MIRROR_Y 0
 
 /* =========================================================================
@@ -93,9 +93,9 @@
 #define TOUCH_PIN_IRQ (-1)
 #define TOUCH_SPI_CLOCK_HZ (1 * 1000 * 1000)
 
-/* Landscape rotation: swap native X/Y so the touch matches the rotated panel. */
-#define TOUCH_SWAP_XY 1
-#define TOUCH_MIRROR_X 0
+/* Native 320x240: no axis swap; mirror X follows the panel MX setting. */
+#define TOUCH_SWAP_XY 0
+#define TOUCH_MIRROR_X 1
 #define TOUCH_MIRROR_Y 0
 
 /*

@@ -52,6 +52,18 @@ static void show_color_bars(esp_lcd_panel_handle_t panel)
         return;
     }
 
+    /* If these bottom-only blocks never appear, the lower gate lines/flex are bad.
+       If they appear, the full-frame transfer path is losing the tail. */
+    for (int test = 0; test < 3; test++) {
+        uint16_t color = steps[test].color;
+        for (size_t p = 0; p < bytes / sizeof(uint16_t); p++) {
+            buffer[p] = color;
+        }
+        ESP_LOGI(TAG, "self-test: bottom-only %s", steps[test].name);
+        esp_lcd_panel_draw_bitmap(panel, 0, LCD_V_RES - 80, LCD_H_RES, LCD_V_RES, buffer);
+        vTaskDelay(pdMS_TO_TICKS(3000));
+    }
+
     for (;;) {
         for (size_t i = 0; i < sizeof(steps) / sizeof(steps[0]); i++) {
             for (size_t p = 0; p < bytes / sizeof(uint16_t); p++) {
@@ -177,12 +189,11 @@ esp_err_t board_display_init(void)
         .monochrome = false,
         .rotation = {
             .swap_xy = false,
-            .mirror_x = false,
-            .mirror_y = false,
+            .mirror_x = LCD_MIRROR_X,
+            .mirror_y = LCD_MIRROR_Y,
         },
         .flags = {
             .buff_dma = true,
-            .sw_rotate = true,
         },
     };
     if (!lvgl_port_lock(0)) {
@@ -197,14 +208,10 @@ esp_err_t board_display_init(void)
         return ESP_FAIL;
     }
 
-    /* Software rotation avoids ILI9341 hardware address-window limits at 320 px. */
-    lv_disp_set_rotation(s_display, LV_DISP_ROT_90);
-
-    ESP_LOGI(TAG, "rotation=%d hor=%d ver=%d sw_rotate=%d", lv_disp_get_rotation(s_display),
-             lv_disp_get_hor_res(s_display), lv_disp_get_ver_res(s_display), s_display->driver->sw_rotate);
+    ESP_LOGI(TAG, "rotation=none hor=%d ver=%d sw_rotate=%d", lv_disp_get_hor_res(s_display),
+             lv_disp_get_ver_res(s_display), s_display->driver->sw_rotate);
     lvgl_port_unlock();
 
-    ESP_LOGI(TAG, "display ready: %dx%d landscape (software rotate), controller %s", UI_H_RES, UI_V_RES,
-             s_controller);
+    ESP_LOGI(TAG, "display ready: %dx%d native, controller %s", UI_H_RES, UI_V_RES, s_controller);
     return ESP_OK;
 }
