@@ -32,6 +32,17 @@ void app_main(void)
     ESP_ERROR_CHECK(ui_host_init());
     ESP_ERROR_CHECK(wasm_host_init());
 
+#if CONFIG_DALANGS_WASM_SMOKE_TEST
+    if (lvgl_port_lock(0)) {
+        for (int i = 0; i < APPLET_COUNT; i++) {
+            esp_err_t err = wasm_host_load(i);
+            ESP_LOGI(TAG, "wasm smoke %d: %s (%u ms)", i, err == ESP_OK ? "ok" : wasm_host_last_error(),
+                     (unsigned)wasm_host_last_load_ms());
+        }
+        lvgl_port_unlock();
+    }
+#endif
+
     if (!lvgl_port_lock(0)) {
         ESP_LOGE(TAG, "LVGL lock failed during first applet load");
         return;

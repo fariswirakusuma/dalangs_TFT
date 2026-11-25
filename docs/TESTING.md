@@ -62,6 +62,55 @@ Run these in order after flashing. Record the result in the PR.
 | Wasm load fails | Rebuild with `make wasm`, reflash; check monitor message |
 | Tab switch resets | Brownout; check USB power and backlight current |
 
+## Touch debug and calibration
+
+Enable coordinate logging:
+
+```sh
+make touch-debug
+make build flash monitor
+```
+
+Tap the screen and read lines like:
+
+```text
+TOUCH: raw=(1820,3510) -> screen=(149,215)
+```
+
+Use this to set `TOUCH_SWAP_XY`, `TOUCH_MIRROR_X`, `TOUCH_MIRROR_Y`, and the
+`TOUCH_RAW_*` window in `pins.h`. The display is natively 320x240 with `MX`
+enabled, so `TOUCH_MIRROR_X` must match it. Turn logging off with:
+
+```sh
+make touch-debug-off
+make build flash monitor
+```
+
+## Wasm smoke test
+
+Load every embedded applet once at boot and log its load time:
+
+```sh
+make wasm-smoke
+make build flash monitor
+```
+
+Expected output includes one line per applet:
+
+```text
+WASM: basic_sliders loaded in 3 ms, 3 widgets
+WASM: fx_buttons loaded in 3 ms, 5 widgets
+...
+MAIN: wasm smoke 0: ok (3 ms)
+```
+
+Turn it off with:
+
+```sh
+make wasm-smoke-off
+make build flash monitor
+```
+
 ## Camera-off UI test
 
 If the display works but the screen turns to noise after boot, the camera

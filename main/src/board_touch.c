@@ -5,6 +5,7 @@
 #include "esp_lcd_touch.h"
 #include "esp_lcd_touch_xpt2046.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "esp_lvgl_port.h"
 #include "pins.h"
 
@@ -42,6 +43,15 @@ static void touch_process(esp_lcd_touch_handle_t tp, uint16_t *x, uint16_t *y, u
     (void)tp;
     (void)strength;
 
+#if CONFIG_DALANGS_TOUCH_DEBUG
+    static int64_t last_log_us;
+    int64_t now_us = esp_timer_get_time();
+    bool log_now = (now_us - last_log_us) > 200000;
+    if (log_now) {
+        last_log_us = now_us;
+    }
+#endif
+
     for (uint8_t i = 0; i < *point_num && i < max_point_num; i++) {
         int nx = map_axis(x[i], TOUCH_RAW_X_MIN, TOUCH_RAW_X_MAX, LCD_H_RES - 1);
         int ny = map_axis(y[i], TOUCH_RAW_Y_MIN, TOUCH_RAW_Y_MAX, LCD_V_RES - 1);
@@ -54,12 +64,21 @@ static void touch_process(esp_lcd_touch_handle_t tp, uint16_t *x, uint16_t *y, u
 #endif
 
 #if TOUCH_SWAP_XY
-        x[i] = (uint16_t)ny;
-        y[i] = (uint16_t)nx;
+        int out_x = ny;
+        int out_y = nx;
 #else
-        x[i] = (uint16_t)nx;
-        y[i] = (uint16_t)ny;
+        int out_x = nx;
+        int out_y = ny;
 #endif
+
+#if CONFIG_DALANGS_TOUCH_DEBUG
+        if (log_now) {
+            ESP_LOGI(TAG, "raw=(%u,%u) -> screen=(%d,%d)", x[i], y[i], out_x, out_y);
+        }
+#endif
+
+        x[i] = (uint16_t)out_x;
+        y[i] = (uint16_t)out_y;
     }
 }
 

@@ -5,7 +5,7 @@ PORT ?= /dev/ttyACM0
 BAUD ?= 460800
 IDF := . "$(IDF_PATH)/export.sh" >/dev/null 2>&1 && idf.py
 
-.PHONY: help setup build wasm test lint-ui lcd-ili9341 lcd-st7789 lcd-mode0 lcd-mode3 lcd-selftest lcd-selftest-off camera-on camera-off flash monitor flash-monitor erase clean distclean menuconfig size doctor
+.PHONY: help setup build wasm test lint-ui lcd-ili9341 lcd-st7789 lcd-mode0 lcd-mode3 lcd-selftest lcd-selftest-off camera-on camera-off touch-debug touch-debug-off wasm-smoke wasm-smoke-off flash monitor flash-monitor erase clean distclean menuconfig size doctor
 
 help:
 	@echo "dalangs_TFT controller"
@@ -22,6 +22,8 @@ help:
 	@echo "  make lcd-selftest  loop full-screen colors at boot"
 	@echo "  make camera-off    test UI without camera preview"
 	@echo "  make camera-on     restore camera preview"
+	@echo "  make touch-debug   log raw/mapped touch coordinates"
+	@echo "  make wasm-smoke    load all wasm applets once at boot"
 	@echo "  make flash         flash over PORT=$(PORT)"
 	@echo "  make monitor       open the serial monitor"
 	@echo "  make flash-monitor flash and monitor"
@@ -85,6 +87,26 @@ camera-on:
 	@test -f sdkconfig || { echo "Run make setup first."; exit 1; }
 	@sed -i 's/^# CONFIG_DALANGS_CAMERA_ENABLE is not set/CONFIG_DALANGS_CAMERA_ENABLE=y/' sdkconfig
 	@echo "Camera preview enabled. Run: make build flash monitor"
+
+touch-debug:
+	@test -f sdkconfig || { echo "Run make setup first."; exit 1; }
+	@sed -i 's/^# CONFIG_DALANGS_TOUCH_DEBUG is not set/CONFIG_DALANGS_TOUCH_DEBUG=y/' sdkconfig
+	@echo "Touch debug enabled. Run: make build flash monitor"
+
+touch-debug-off:
+	@test -f sdkconfig || { echo "Run make setup first."; exit 1; }
+	@sed -i 's/^CONFIG_DALANGS_TOUCH_DEBUG=y/# CONFIG_DALANGS_TOUCH_DEBUG is not set/' sdkconfig
+	@echo "Touch debug disabled."
+
+wasm-smoke:
+	@test -f sdkconfig || { echo "Run make setup first."; exit 1; }
+	@sed -i 's/^# CONFIG_DALANGS_WASM_SMOKE_TEST is not set/CONFIG_DALANGS_WASM_SMOKE_TEST=y/' sdkconfig
+	@echo "Wasm smoke test enabled. Run: make build flash monitor"
+
+wasm-smoke-off:
+	@test -f sdkconfig || { echo "Run make setup first."; exit 1; }
+	@sed -i 's/^CONFIG_DALANGS_WASM_SMOKE_TEST=y/# CONFIG_DALANGS_WASM_SMOKE_TEST is not set/' sdkconfig
+	@echo "Wasm smoke test disabled."
 
 lcd-selftest:
 	@test -f sdkconfig || { echo "Run make setup first."; exit 1; }

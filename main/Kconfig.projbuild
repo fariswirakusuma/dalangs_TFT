@@ -36,6 +36,20 @@ menu "dalangs_TFT"
             bool "Mode 3"
     endchoice
 
+    config DALANGS_TOUCH_DEBUG
+        bool "Log touch coordinates"
+        default n
+        help
+            Logs raw and mapped touch coordinates while pressed. Use it to
+            verify axis swap, mirror, and TOUCH_RAW_* calibration.
+
+    config DALANGS_WASM_SMOKE_TEST
+        bool "Load every wasm applet once at boot"
+        default n
+        help
+            Loads all embedded applets in sequence and logs their load time
+            and widget count before opening the normal UI.
+
     config DALANGS_CAMERA_ENABLE
         bool "Enable camera preview"
         default y

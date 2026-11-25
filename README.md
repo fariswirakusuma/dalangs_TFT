@@ -126,6 +126,8 @@ on purpose.
 ```sh
 make test
 make lint-ui
+make touch-debug    # log raw/mapped touch coordinates
+make wasm-smoke     # load every applet once at boot
 ```
 
 This runs host-side unit tests for camera parameter clamping and the widget
