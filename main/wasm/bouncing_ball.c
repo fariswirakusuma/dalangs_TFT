@@ -14,7 +14,7 @@ extern void canvas_flush(void);
 #define SCREEN_W 320
 #define SCREEN_H 240
 #define BALL_SIZE 14
-#define BOTTOM_Y (SCREEN_H - 24)
+#define BOTTOM_Y 208
 
 /* Position in pixels, velocity in pixels per second. */
 static int s_x = 40;

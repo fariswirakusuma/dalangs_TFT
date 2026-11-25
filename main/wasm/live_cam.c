@@ -31,6 +31,6 @@ __attribute__((export_name("app_tick"))) void app_tick(int elapsed_ms)
 
     /* Recording dot blinks once per second. */
     canvas_rect(300, 28, 10, 10, blink < 500 ? RED : GREEN);
-    canvas_rect(0, 0, 320, 2, GREEN);
+    canvas_rect(0, 20, 320, 2, GREEN);
     canvas_flush();
 }
