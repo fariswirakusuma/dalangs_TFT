@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stddef.h>
 
 /* Camera parameter IDs exposed to Wasm. */
 typedef enum {
