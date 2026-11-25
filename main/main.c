@@ -18,10 +18,15 @@ void app_main(void)
     ESP_ERROR_CHECK(board_display_init());
     ESP_ERROR_CHECK(board_touch_init(board_display_handle()));
 
+#if CONFIG_DALANGS_CAMERA_ENABLE
     esp_err_t camera_err = camera_tuner_init();
     if (camera_err != ESP_OK) {
         ESP_LOGW(TAG, "continuing without camera preview");
     }
+#else
+    esp_err_t camera_err = ESP_ERR_NOT_SUPPORTED;
+    ESP_LOGW(TAG, "camera preview disabled by config");
+#endif
 
     ESP_ERROR_CHECK(ui_host_init());
     ESP_ERROR_CHECK(wasm_host_init());
@@ -31,14 +36,18 @@ void app_main(void)
         return;
     }
     ui_host_switch_applet(APPLET_SLIDERS);
+#if CONFIG_DALANGS_CAMERA_ENABLE
     if (camera_err != ESP_OK) {
         ui_host_show_message("Camera init failed. Check the DVP cable and pins.h.");
     }
+#endif
     lvgl_port_unlock();
 
+#if CONFIG_DALANGS_CAMERA_ENABLE
     if (camera_err == ESP_OK) {
         camera_tuner_start();
     }
+#endif
 
     ESP_LOGI(TAG, "ready: %s, %u KB SRAM free, %u KB PSRAM free", camera_tuner_sensor_name(),
              (unsigned)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),

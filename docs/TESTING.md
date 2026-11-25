@@ -62,6 +62,25 @@ Run these in order after flashing. Record the result in the PR.
 | Wasm load fails | Rebuild with `make wasm`, reflash; check monitor message |
 | Tab switch resets | Brownout; check USB power and backlight current |
 
+## Camera-off UI test
+
+If the display works but the screen turns to noise after boot, the camera
+preview may be the garbage, not the LCD:
+
+```sh
+make camera-off
+make build flash monitor
+```
+
+With the camera disabled the applet panel and tab bar render on a black
+background. If that UI is clean, the LCD is fine and the camera path needs
+debugging. Restore it with:
+
+```sh
+make camera-on
+make build flash monitor
+```
+
 ## LCD color-bar self test
 
 To separate a panel/wiring fault from an application fault:

@@ -68,8 +68,12 @@
 /* Most 2.8 inch IPS modules use BGR order. Swap if red and blue are reversed. */
 #define LCD_RGB_ORDER_BGR 1
 
-/* ILI9341 supports mode 0 and 3. Try 3 if mode 0 shows noise. */
+/* ILI9341 supports mode 0 and 3. Select it in menuconfig if mode 0 is noisy. */
+#if CONFIG_DALANGS_LCD_SPI_MODE_3
+#define LCD_SPI_MODE 3
+#else
 #define LCD_SPI_MODE 0
+#endif
 
 /* Some panels need a horizontal/vertical mirror after rotation. */
 #define LCD_MIRROR_X 0

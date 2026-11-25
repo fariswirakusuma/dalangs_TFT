@@ -22,6 +22,28 @@ menu "dalangs_TFT"
             Most IPS 2.8 inch modules need color inversion. Disable if the
             image looks like a photographic negative.
 
+    choice DALANGS_LCD_SPI_MODE
+        prompt "LCD SPI mode"
+        default DALANGS_LCD_SPI_MODE_0
+        help
+            ILI9341 supports mode 0 and 3. If the image is partial or noisy,
+            try the other mode.
+
+        config DALANGS_LCD_SPI_MODE_0
+            bool "Mode 0"
+
+        config DALANGS_LCD_SPI_MODE_3
+            bool "Mode 3"
+    endchoice
+
+    config DALANGS_CAMERA_ENABLE
+        bool "Enable camera preview"
+        default y
+        help
+            Disable to test the LVGL UI on a black background without
+            initializing the camera. Useful when separating a display fault
+            from a camera preview fault.
+
     config DALANGS_LCD_SELF_TEST
         bool "Loop full-screen colors at boot"
         default n

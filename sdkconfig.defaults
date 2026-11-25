@@ -31,3 +31,7 @@ CONFIG_LV_USE_CANVAS=y
 
 # XPT2046 reports raw 12-bit values; board_touch.c maps them to screen pixels.
 # CONFIG_XPT2046_CONVERT_ADC_TO_COORDS is not set
+
+# Feature toggles
+CONFIG_DALANGS_CAMERA_ENABLE=y
+CONFIG_DALANGS_LCD_SPI_MODE_0=y
