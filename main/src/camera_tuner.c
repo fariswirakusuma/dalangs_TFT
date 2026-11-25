@@ -76,6 +76,12 @@ static void camera_task(void *arg)
             if (fb->format == PIXFORMAT_RGB565 && fb->width == CAM_FRAME_W && fb->height == CAM_FRAME_H &&
                 fb->len <= CAM_FRAME_BYTES && s_frame != NULL) {
                 memcpy(s_frame, fb->buf, fb->len);
+#if CAMERA_BYTE_SWAP
+                uint16_t *pixels = (uint16_t *)s_frame;
+                for (size_t i = 0; i < fb->len / 2; i++) {
+                    pixels[i] = (uint16_t)((pixels[i] >> 8) | (pixels[i] << 8));
+                }
+#endif
                 s_frame_id++;
             }
             esp_camera_fb_return(fb);

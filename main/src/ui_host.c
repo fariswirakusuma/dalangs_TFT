@@ -267,10 +267,10 @@ void ui_host_canvas_rect(int x, int y, int w, int h, int color565)
         return;
     }
 
-    int x0 = x < 0 ? 0 : x;
-    int y0 = y < 0 ? 0 : y;
-    int x1 = x + w;
-    int y1 = y + h;
+    int64_t x0 = x < 0 ? 0 : x;
+    int64_t y0 = y < 0 ? 0 : y;
+    int64_t x1 = (int64_t)x + w;
+    int64_t y1 = (int64_t)y + h;
     if (x1 > UI_H_RES) {
         x1 = UI_H_RES;
     }
@@ -283,9 +283,9 @@ void ui_host_canvas_rect(int x, int y, int w, int h, int color565)
 
     uint16_t *pixels = (uint16_t *)s_canvas_buf;
     uint16_t color = (uint16_t)color565;
-    for (int row = y0; row < y1; row++) {
+    for (int row = (int)y0; row < (int)y1; row++) {
         uint16_t *line = &pixels[row * UI_H_RES];
-        for (int col = x0; col < x1; col++) {
+        for (int col = (int)x0; col < (int)x1; col++) {
             line[col] = color;
         }
     }
@@ -304,6 +304,12 @@ void ui_host_canvas_line(int x0, int y0, int x1, int y1, int color565)
     if (s_canvas_buf == NULL) {
         return;
     }
+
+    /* Clamp wild endpoints from an applet before the Bresenham arithmetic. */
+    x0 = x0 < -1024 ? -1024 : (x0 > UI_H_RES + 1024 ? UI_H_RES + 1024 : x0);
+    y0 = y0 < -1024 ? -1024 : (y0 > UI_V_RES + 1024 ? UI_V_RES + 1024 : y0);
+    x1 = x1 < -1024 ? -1024 : (x1 > UI_H_RES + 1024 ? UI_H_RES + 1024 : x1);
+    y1 = y1 < -1024 ? -1024 : (y1 > UI_V_RES + 1024 ? UI_V_RES + 1024 : y1);
 
     int dx = x1 > x0 ? x1 - x0 : x0 - x1;
     int sx = x0 < x1 ? 1 : -1;

@@ -33,8 +33,9 @@ build_one() {
         -fuse-ld="$WASM_LD" \
         -Wl,--no-entry \
         -Wl,--export-memory \
-        -Wl,--initial-memory=131072 \
-        -Wl,--max-memory=262144 \
+        -Wl,-z,stack-size=16384 \
+        -Wl,--initial-memory=65536 \
+        -Wl,--max-memory=131072 \
         -Wl,--allow-undefined \
         -Wl,--gc-sections \
         -Wl,--strip-all \

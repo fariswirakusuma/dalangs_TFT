@@ -52,10 +52,10 @@ static char s_error[128];
 static const char *memory_string(IM3Runtime runtime, void *mem, const char *ptr)
 {
     uint32_t size = m3_GetMemorySize(runtime);
-    const uint8_t *base = (const uint8_t *)mem;
-    const uint8_t *p = (const uint8_t *)ptr;
+    uintptr_t base = (uintptr_t)mem;
+    uintptr_t p = (uintptr_t)ptr;
 
-    if (p == NULL || base == NULL || p < base || p >= base + size) {
+    if (p == 0 || base == 0 || p < base || p >= base + size) {
         return NULL;
     }
 
@@ -72,6 +72,7 @@ m3ApiRawFunction(host_log)
     m3ApiGetArg(uint32_t, len);
 
     if (text != NULL && len > 0) {
+        m3ApiCheckMem(text, len);
         ESP_LOGI(TAG, "applet: %.*s", (int)len, text);
     }
     m3ApiSuccess();
@@ -280,6 +281,7 @@ esp_err_t wasm_host_load(int applet_id)
 
     result = m3_LoadModule(s_runtime, module);
     if (result) {
+        m3_FreeModule(module);
         return fail(result);
     }
 

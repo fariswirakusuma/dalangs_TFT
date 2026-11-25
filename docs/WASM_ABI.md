@@ -95,12 +95,12 @@ The script uses:
 ```text
 clang --target=wasm32 -nostdlib -O2
 wasm-ld --no-entry --export-memory
-        --initial-memory=131072 --max-memory=262144
+        --initial-memory=65536 --max-memory=131072
         --allow-undefined --gc-sections --strip-all
 ```
 
-The 128 KB initial memory is the smallest page-aligned size that fits the
-current applets. Increasing it costs internal heap per running runtime.
+The 64 KB initial memory is page-aligned and leaves room for a 16 KB stack in
+the current applets. Increasing it costs internal heap per running runtime.
 
 ## Rules
 

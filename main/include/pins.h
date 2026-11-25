@@ -107,6 +107,9 @@
 #define CAM_FRAME_W 320
 #define CAM_FRAME_H 240
 
+/* Set to 1 if the preview colors are swapped on your sensor/module. */
+#define CAMERA_BYTE_SWAP 0
+
 /* =========================================================================
  * Reserved / avoid
  * =========================================================================

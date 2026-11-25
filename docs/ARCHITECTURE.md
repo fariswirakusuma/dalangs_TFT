@@ -90,7 +90,7 @@ status bar. It includes parse, instantiation, linking, and `app_init`.
 | Persistent preview frame | PSRAM | 150 KB |
 | Canvas (RGB565) | PSRAM | 150 KB |
 | Wasm module copy | PSRAM preferred | < 1 KB |
-| Wasm linear memory | internal heap | 128 KB per runtime |
+| Wasm linear memory | internal heap | 64 KB per runtime |
 | LVGL draw buffers (2x) | internal DMA | ~50 KB |
 | LVGL task stack | internal | 12 KB |
 
