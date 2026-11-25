@@ -25,4 +25,6 @@ run_test test_ui_model \
     "$ROOT/test/test_ui_model.c" \
     "$ROOT/main/src/ui_model.c"
 
+python3 "$ROOT/test/check_wasm.py" "$ROOT/main/wasm"
+
 echo "All host tests passed."

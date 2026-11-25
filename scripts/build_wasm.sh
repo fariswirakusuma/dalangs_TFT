@@ -34,7 +34,7 @@ build_one() {
         -Wl,--no-entry \
         -Wl,--export-memory \
         -Wl,--initial-memory=131072 \
-        -Wl,--max-memory=1048576 \
+        -Wl,--max-memory=262144 \
         -Wl,--allow-undefined \
         -Wl,--gc-sections \
         -Wl,--strip-all \
