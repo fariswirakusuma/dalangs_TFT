@@ -23,11 +23,11 @@ menu "dalangs_TFT"
             image looks like a photographic negative.
 
     config DALANGS_LCD_SELF_TEST
-        bool "Show full-screen colors at boot"
+        bool "Loop full-screen colors at boot"
         default n
         help
-            Fills the panel with red, green, blue, white, black, and gray
-            before LVGL starts. Use this to separate a panel/wiring fault
-            from an application fault.
+            Fills the panel with red, green, blue, white, black, and gray,
+            then repeats forever. Use this to separate a panel/wiring/power
+            fault from an application fault. Disable to boot the UI.
 
 endmenu

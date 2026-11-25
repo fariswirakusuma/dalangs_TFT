@@ -71,10 +71,10 @@ make lcd-selftest
 make build flash monitor
 ```
 
-The panel shows red, green, blue, white, black, and gray full-screen fills
-before LVGL starts. If the colors are clean, the panel and SPI wiring are good.
-If they are noise or all white, fix the wiring/controller before debugging the
-UI. Turn it off with:
+The panel loops red, green, blue, white, black, and gray full-screen fills
+forever before LVGL starts. If every color is clean for several cycles, the
+panel, power, and SPI wiring are good. If they are noise or only partly filled,
+fix the wiring/power before debugging the UI. Turn it off with:
 
 ```sh
 make lcd-selftest-off

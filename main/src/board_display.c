@@ -52,16 +52,16 @@ static void show_color_bars(esp_lcd_panel_handle_t panel)
         return;
     }
 
-    for (size_t i = 0; i < sizeof(steps) / sizeof(steps[0]); i++) {
-        for (size_t p = 0; p < bytes / sizeof(uint16_t); p++) {
-            buffer[p] = steps[i].color;
+    for (;;) {
+        for (size_t i = 0; i < sizeof(steps) / sizeof(steps[0]); i++) {
+            for (size_t p = 0; p < bytes / sizeof(uint16_t); p++) {
+                buffer[p] = steps[i].color;
+            }
+            ESP_LOGI(TAG, "self-test: %s", steps[i].name);
+            esp_lcd_panel_draw_bitmap(panel, 0, 0, LCD_H_RES, LCD_V_RES, buffer);
+            vTaskDelay(pdMS_TO_TICKS(800));
         }
-        ESP_LOGI(TAG, "self-test: %s", steps[i].name);
-        esp_lcd_panel_draw_bitmap(panel, 0, 0, LCD_H_RES, LCD_V_RES, buffer);
-        vTaskDelay(pdMS_TO_TICKS(800));
     }
-
-    heap_caps_free(buffer);
 }
 #endif
 
@@ -140,8 +140,13 @@ esp_err_t board_display_init(void)
 
     uint8_t panel_id[3] = {0};
     esp_err_t id_err = esp_lcd_panel_io_rx_param(io, 0x04, panel_id, sizeof(panel_id));
-    ESP_LOGI(TAG, "panel ID (%s): %02X %02X %02X", esp_err_to_name(id_err), panel_id[0],
+    ESP_LOGI(TAG, "panel ID 04 (%s): %02X %02X %02X", esp_err_to_name(id_err), panel_id[0],
              panel_id[1], panel_id[2]);
+
+    uint8_t panel_id4[4] = {0};
+    id_err = esp_lcd_panel_io_rx_param(io, 0xD3, panel_id4, sizeof(panel_id4));
+    ESP_LOGI(TAG, "panel ID D3 (%s): %02X %02X %02X %02X", esp_err_to_name(id_err), panel_id4[0],
+             panel_id4[1], panel_id4[2], panel_id4[3]);
 
     ESP_RETURN_ON_ERROR(esp_lcd_panel_init(panel), TAG, "panel init failed");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_invert_color(panel, CONFIG_DALANGS_LCD_INVERT_COLOR), TAG,
