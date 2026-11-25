@@ -5,7 +5,7 @@ PORT ?= /dev/ttyACM0
 BAUD ?= 460800
 IDF := . "$(IDF_PATH)/export.sh" >/dev/null 2>&1 && idf.py
 
-.PHONY: help setup build wasm test flash monitor flash-monitor erase clean distclean menuconfig size doctor
+.PHONY: help setup build wasm test lint-ui flash monitor flash-monitor erase clean distclean menuconfig size doctor
 
 help:
 	@echo "dalangs_TFT controller"
@@ -14,6 +14,7 @@ help:
 	@echo "  make build         build firmware with CMake/Ninja"
 	@echo "  make wasm          rebuild the .wasm applets"
 	@echo "  make test          run host unit tests"
+	@echo "  make lint-ui       check UI/pin/wasm boundaries"
 	@echo "  make flash         flash over PORT=$(PORT)"
 	@echo "  make monitor       open the serial monitor"
 	@echo "  make flash-monitor flash and monitor"
@@ -44,6 +45,9 @@ wasm:
 
 test:
 	./test/run.sh
+
+lint-ui:
+	./scripts/lint_ui.sh
 
 flash:
 	$(IDF) -p "$(PORT)" -b "$(BAUD)" flash

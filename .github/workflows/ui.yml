@@ -1,0 +1,29 @@
+name: UI lint
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "main/wasm/**"
+      - "main/src/ui_*"
+      - "main/include/ui_*"
+      - "main/include/pins.h"
+      - "scripts/lint_ui.sh"
+  pull_request:
+    paths:
+      - "main/wasm/**"
+      - "main/src/ui_*"
+      - "main/include/ui_*"
+      - "main/include/pins.h"
+      - "scripts/lint_ui.sh"
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Check UI boundaries
+        run: ./scripts/lint_ui.sh
