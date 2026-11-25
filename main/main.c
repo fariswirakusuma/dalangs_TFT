@@ -25,6 +25,7 @@ void app_main(void)
     }
 #else
     esp_err_t camera_err = ESP_ERR_NOT_SUPPORTED;
+    (void)camera_err;
     ESP_LOGW(TAG, "camera preview disabled by config");
 #endif
 

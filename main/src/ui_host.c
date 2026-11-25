@@ -507,6 +507,11 @@ esp_err_t ui_host_init(void)
     lv_timer_create(status_timer_cb, 1000, NULL);
     status_timer_cb(NULL);
 
+    lv_mem_monitor_t mon;
+    lv_mem_monitor(&mon);
+    ESP_LOGI(TAG, "LVGL mem: %u%% used, %u bytes free, %u%% frag", mon.used_pct, (unsigned)mon.free_size,
+             mon.frag_pct);
+
     lvgl_port_unlock();
     ESP_LOGI(TAG, "native UI ready");
     return ESP_OK;

@@ -170,26 +170,41 @@ esp_err_t board_display_init(void)
     lvgl_port_display_cfg_t disp_cfg = {
         .io_handle = io,
         .panel_handle = panel,
-        .buffer_size = UI_H_RES * 40,
+        .buffer_size = LCD_H_RES * 20,
         .double_buffer = true,
-        .hres = UI_H_RES,
-        .vres = UI_V_RES,
+        .hres = LCD_H_RES,
+        .vres = LCD_V_RES,
         .monochrome = false,
         .rotation = {
-            .swap_xy = LCD_LANDSCAPE,
-            .mirror_x = LCD_MIRROR_X,
-            .mirror_y = LCD_MIRROR_Y,
+            .swap_xy = false,
+            .mirror_x = false,
+            .mirror_y = false,
         },
         .flags = {
             .buff_dma = true,
+            .sw_rotate = true,
         },
     };
+    if (!lvgl_port_lock(0)) {
+        ESP_LOGE(TAG, "lvgl lock failed while adding display");
+        return ESP_ERR_TIMEOUT;
+    }
+
     s_display = lvgl_port_add_disp(&disp_cfg);
     if (s_display == NULL) {
+        lvgl_port_unlock();
         ESP_LOGE(TAG, "lvgl display registration failed");
         return ESP_FAIL;
     }
 
-    ESP_LOGI(TAG, "display ready: %dx%d landscape, controller %s", UI_H_RES, UI_V_RES, s_controller);
+    /* Software rotation avoids ILI9341 hardware address-window limits at 320 px. */
+    lv_disp_set_rotation(s_display, LV_DISP_ROT_90);
+
+    ESP_LOGI(TAG, "rotation=%d hor=%d ver=%d sw_rotate=%d", lv_disp_get_rotation(s_display),
+             lv_disp_get_hor_res(s_display), lv_disp_get_ver_res(s_display), s_display->driver->sw_rotate);
+    lvgl_port_unlock();
+
+    ESP_LOGI(TAG, "display ready: %dx%d landscape (software rotate), controller %s", UI_H_RES, UI_V_RES,
+             s_controller);
     return ESP_OK;
 }
