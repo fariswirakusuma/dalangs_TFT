@@ -26,6 +26,7 @@ target_compile_definitions(${COMPONENT_LIB} PUBLIC
 )
 
 target_compile_options(${COMPONENT_LIB} PRIVATE
+    -fno-strict-aliasing
     -Wno-unused-parameter
     -Wno-sign-compare
     -Wno-int-to-pointer-cast

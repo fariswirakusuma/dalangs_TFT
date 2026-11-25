@@ -63,7 +63,7 @@ static void touch_process(esp_lcd_touch_handle_t tp, uint16_t *x, uint16_t *y, u
     }
 }
 
-esp_err_t board_touch_init(lv_display_t *disp)
+esp_err_t board_touch_init(lv_disp_t *disp)
 {
     if (disp == NULL) {
         return ESP_ERR_INVALID_ARG;

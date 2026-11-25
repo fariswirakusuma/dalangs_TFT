@@ -38,6 +38,14 @@
 #define LCD_V_RES 320
 #define LCD_LANDSCAPE 1
 
+#if LCD_LANDSCAPE
+#define UI_H_RES LCD_V_RES
+#define UI_V_RES LCD_H_RES
+#else
+#define UI_H_RES LCD_H_RES
+#define UI_V_RES LCD_V_RES
+#endif
+
 #define LCD_PIXEL_CLOCK_HZ (40 * 1000 * 1000)
 #define LCD_CMD_BITS 8
 #define LCD_PARAM_BITS 8

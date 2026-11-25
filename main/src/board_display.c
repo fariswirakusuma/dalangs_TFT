@@ -15,7 +15,7 @@
 #endif
 
 static const char *TAG = "DISPLAY";
-static lv_display_t *s_display;
+static lv_disp_t *s_display;
 
 #if CONFIG_DALANGS_LCD_ILI9341
 static const char *s_controller = "ILI9341";
@@ -23,7 +23,7 @@ static const char *s_controller = "ILI9341";
 static const char *s_controller = "ST7789";
 #endif
 
-lv_display_t *board_display_handle(void)
+lv_disp_t *board_display_handle(void)
 {
     return s_display;
 }
