@@ -33,14 +33,14 @@ there and update this table in the same commit.
 | MISO | 14 | Touch `T_DO`; LCD MISO is optional |
 | CS | 47 | Board LCD header `CS` |
 | DC | 45 | Board LCD header `DC` |
-| RST | 0 | Board LCD header `RES`; shared with BOOT |
+| RST | 2 | Safe reset pin (the header `RES` is IO0/BOOT) |
 | BL | 21 | Board LCD header `BLK` |
 
 ### Touch (XPT2046)
 
 | Signal | GPIO | Notes |
 | --- | --- | --- |
-| T_CS | 2 | QWIIC SCL pin, used as touch chip select |
+| T_CS | 1 | QWIIC SDA pin, used as touch chip select |
 | T_IRQ | -1 | Not used; the driver polls over SPI |
 | T_CLK | 42 | Shared with LCD SCK |
 | T_DIN | 41 | Shared with LCD MOSI |
@@ -70,14 +70,14 @@ The board's LCD header is 8 pins. Wire the red 14-pin module like this:
 | VCC | 3V3 | 3.3 V only |
 | GND | GND | Common ground |
 | CS | IO47 | LCD chip select |
-| RESET | IO0 | Shared with BOOT |
+| RESET | IO2 | Avoids the BOOT button on IO0 |
 | DC | IO45 | Data/command |
 | MOSI / SDI | IO41 | LCD header SDA |
 | SCK | IO42 | LCD header SCL |
 | LED | IO21 | Backlight control |
 | MISO | IO14 | Optional LCD read; also touch T_DO |
 | T_CLK | IO42 | Shared with LCD SCK |
-| T_CS | IO2 | Touch chip select |
+| T_CS | IO1 | Touch chip select |
 | T_DIN | IO41 | Shared with LCD MOSI |
 | T_DO | IO14 | Shared with LCD MISO |
 | T_IRQ | — | Not connected; polling is used |
@@ -96,7 +96,7 @@ both to IO14 by mistake; they are one shared SPI MISO line.
 | 43, 44 | UART0 console |
 | 45 | LCD DC on this board (also a strapping pin) |
 | 46 | Shutter button |
-| 0 | LCD RST / BOOT button |
+| 0 | BOOT button / header RES (left unused) |
 | 3 | User switch |
 | 48 | Onboard WS2812 RGB LED |
 

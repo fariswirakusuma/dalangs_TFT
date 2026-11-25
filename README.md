@@ -28,7 +28,7 @@ Built with **ESP-IDF v6.1 + CMake + Ninja + LVGL 8.4 + wasm3**.
   left unused by this firmware.
 
 The display uses the board's own SPI LCD header: SCL=IO42, SDA=IO41,
-RES=IO0, DC=IO45, CS=IO47, BLK=IO21. The XPT2046 adds T_CS=IO2 and T_DO=IO14;
+DC=IO45, CS=IO47, BLK=IO21, with a safe RST on IO2. The XPT2046 adds T_CS=IO1 and T_DO=IO14;
 its CLK/DIN share the LCD bus. The exact wiring is in
 [docs/HARDWARE.md](docs/HARDWARE.md). All GPIO numbers live in
 [`main/include/pins.h`](main/include/pins.h).
