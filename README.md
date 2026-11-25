@@ -17,15 +17,21 @@ Built with **ESP-IDF v6.1 + CMake + Ninja + LVGL 8.4 + wasm3**.
 
 ## Hardware
 
+- **Board**: ESP32-S3-CAM N16R8, dual USB-C, onboard microSD and camera FPC.
 - **MCU**: ESP32-S3-WROOM-1 **N16R8** (16 MB flash, 8 MB octal PSRAM).
-- **Camera**: OV2640/OV5640 DVP module on the generic ESP32-S3-CAM pinout.
+- **Camera**: OV2640/OV3660/**OV5640** DVP module. OV5640 uses the same DVP
+  wiring as OV2640, so no pin change is needed for the 5 MP sensor.
 - **Display**: 2.8 inch 240x320 SPI TFT, ST7789 or ILI9341 controller.
 - **Touch**: XPT2046 resistive controller on the same SPI bus.
-- **Power**: 3.3 V logic. Feed the backlight from a transistor or a series
-  resistor, not directly from a GPIO beyond its current rating.
+- **Power**: 3.3 V logic. Tie the TFT LED pin to 3.3 V through the module
+  backlight circuit. The onboard microSD (GPIO 38-40) and WS2812 (GPIO 48) are
+  left unused by this firmware.
 
-The exact wiring is in [docs/HARDWARE.md](docs/HARDWARE.md). All GPIO numbers
-live in [`main/include/pins.h`](main/include/pins.h).
+The display uses the board's own SPI LCD header: SCL=IO42, SDA=IO41,
+RES=IO0, DC=IO45, CS=IO47, BLK=IO21. The XPT2046 adds T_CS=IO2 and T_DO=IO14;
+its CLK/DIN share the LCD bus. The exact wiring is in
+[docs/HARDWARE.md](docs/HARDWARE.md). All GPIO numbers live in
+[`main/include/pins.h`](main/include/pins.h).
 
 ## Quick start
 

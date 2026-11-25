@@ -8,12 +8,22 @@
  * @file pins.h
  * @brief Single source of truth for the board wiring.
  *
- * Board: ESP32-S3-WROOM N16R8 + OV2640/OV5640 DVP camera
- *        + 2.8 inch 240x320 SPI TFT with XPT2046 touch.
+ * Board: ESP32-S3-CAM N16R8 (dual USB-C, onboard microSD and camera FPC).
+ * This is the common GOOUUU/DIYables/Freenove-style board with an
+ * ESP32-S3-WROOM-1 N16R8 and an OV2640/OV3660/OV5640 DVP camera.
  *
- * Camera pins follow the common ESP32-S3-CAM DVP profile. Change CAM_* only
- * if your carrier board uses a different profile; the pins below are the
- * default for the generic N16R8 camera board.
+ * Camera pins match the board's DVP header (same as CAMERA_MODEL_ESP32S3_EYE)
+ * and are NOT sensor-specific: OV5640 uses the same DVP wiring as OV2640.
+ *
+ * Reserved by this board and deliberately avoided below:
+ *   38/39/40  onboard microSD (SD_CMD / SD_CLK / SD_D0)
+ *   48        onboard WS2812 RGB LED
+ *   19/20     native USB
+ *   43/44     UART0 console
+ *   33-37     octal PSRAM
+ *
+ * The SPI LCD header intentionally uses IO0 (BOOT/RST), IO45 (strapping DC),
+ * and IO21 (backlight); those are the board's documented LCD pins.
  *
  * The LCD and touch share one SPI bus. XPT2046 T_CLK/T_DIN are wired to the
  * LCD SCK/MOSI, T_DO goes to LCD_PIN_MISO, and T_CS is separate.
@@ -25,13 +35,18 @@
 
 #define LCD_HOST SPI2_HOST
 
-#define LCD_PIN_SCK 21
-#define LCD_PIN_MOSI 14
-#define LCD_PIN_MISO 39
+/*
+ * These follow the board's dedicated SPI LCD header, so a ribbon cable or
+ * the labeled header pins can be used directly:
+ *   GND, VCC, SCL, SDA, RES, DC, CS, BLK
+ */
+#define LCD_PIN_SCK 42
+#define LCD_PIN_MOSI 41
+#define LCD_PIN_MISO 14
 #define LCD_PIN_CS 47
-#define LCD_PIN_DC 1
-#define LCD_PIN_RST 2
-#define LCD_PIN_BCKL 38
+#define LCD_PIN_DC 45
+#define LCD_PIN_RST 0
+#define LCD_PIN_BCKL 21
 
 /* Native panel resolution. The UI is rotated to landscape. */
 #define LCD_H_RES 240
@@ -61,8 +76,14 @@
  * Touch (XPT2046, shares LCD SPI bus)
  * ========================================================================= */
 
-#define TOUCH_PIN_CS 41
-#define TOUCH_PIN_IRQ 40
+/*
+ * The LCD header has no touch pins. XPT2046 T_CLK/T_DIN share LCD SCK/MOSI,
+ * T_DO uses IO14 (same as LCD MISO), and T_CS uses IO2 (QWIIC SCL).
+ */
+#define TOUCH_PIN_CS 2
+
+/* XPT2046 PENIRQ is optional; the driver polls over SPI when this is -1. */
+#define TOUCH_PIN_IRQ (-1)
 #define TOUCH_SPI_CLOCK_HZ (1 * 1000 * 1000)
 
 /* Landscape rotation: swap native X/Y so the touch matches the rotated panel. */

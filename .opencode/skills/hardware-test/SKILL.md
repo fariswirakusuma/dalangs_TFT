@@ -10,6 +10,7 @@ description: Bring-up and acceptance testing for dalangs_TFT hardware. Use when 
 - ESP32-S3-WROOM N16R8: 16 MB flash, 8 MB octal PSRAM.
 - Camera: OV2640/OV5640 DVP module on the ESP32-S3-CAM pinout.
 - Display: 2.8 inch 240x320 SPI TFT with XPT2046 touch (14-pin module).
+- Keep GPIO 38-40 free for the onboard microSD, and GPIO 48 for the WS2812.
 - Logic level: 3.3 V. Do not feed 5 V into the panel or touch controller.
 
 Pin truth is `main/include/pins.h`; wiring prose is `docs/HARDWARE.md`. If they disagree, fix both.

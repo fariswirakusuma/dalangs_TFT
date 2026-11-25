@@ -2,8 +2,10 @@
 
 ## Board
 
+- **Board**: ESP32-S3-CAM N16R8, dual USB-C, onboard microSD and camera FPC.
 - **MCU**: ESP32-S3-WROOM-1 N16R8 (16 MB flash, 8 MB octal PSRAM).
-- **Camera**: OV2640 or OV5640 DVP module, generic ESP32-S3-CAM pinout.
+- **Camera**: OV2640 / OV3660 / OV5640 DVP module. OV5640 uses the same DVP
+  wiring, so no pin change is needed for the 5 MP sensor.
 - **Display**: 2.8 inch 240x320 SPI TFT, ST7789 or ILI9341.
 - **Touch**: XPT2046 resistive controller.
 
@@ -26,23 +28,23 @@ there and update this table in the same commit.
 
 | Signal | GPIO | Notes |
 | --- | --- | --- |
-| SCK | 21 | Shared with XPT2046 `T_CLK` |
-| MOSI (SDA) | 14 | Shared with XPT2046 `T_DIN` |
-| MISO | 39 | Shared with XPT2046 `T_DO` |
-| CS | 47 | Display chip select |
-| DC | 1 | Data/command |
-| RST | 2 | Panel reset |
-| BL | 38 | Backlight enable, active high |
+| SCK | 42 | Board LCD header `SCL`; shared with XPT2046 `T_CLK` |
+| MOSI (SDA) | 41 | Board LCD header `SDA`; shared with XPT2046 `T_DIN` |
+| MISO | 14 | Touch `T_DO`; LCD MISO is optional |
+| CS | 47 | Board LCD header `CS` |
+| DC | 45 | Board LCD header `DC` |
+| RST | 0 | Board LCD header `RES`; shared with BOOT |
+| BL | 21 | Board LCD header `BLK` |
 
 ### Touch (XPT2046)
 
 | Signal | GPIO | Notes |
 | --- | --- | --- |
-| T_CS | 41 | Separate chip select |
-| T_IRQ | 40 | Optional; set to `-1` in `pins.h` if unused |
-| T_CLK | 21 | Shared with LCD SCK |
-| T_DIN | 14 | Shared with LCD MOSI |
-| T_DO | 39 | Shared with LCD MISO |
+| T_CS | 2 | QWIIC SCL pin, used as touch chip select |
+| T_IRQ | -1 | Not used; the driver polls over SPI |
+| T_CLK | 42 | Shared with LCD SCK |
+| T_DIN | 41 | Shared with LCD MOSI |
+| T_DO | 14 | Shared with LCD MISO |
 
 ### Camera (DVP)
 
@@ -66,13 +68,17 @@ there and update this table in the same commit.
 | 19, 20 | Native USB D-/D+ |
 | 26-32 | SPI flash |
 | 33-37 | Octal PSRAM on N16R8 |
+| 38, 39, 40 | Onboard microSD (SD_CMD, SD_CLK, SD_D0) |
 | 43, 44 | UART0 console |
-| 45, 46 | Strapping |
-| 0, 3 | Strapping |
+| 45 | LCD DC on this board (also a strapping pin) |
+| 46 | Shutter button |
+| 0 | LCD RST / BOOT button |
+| 3 | User switch |
+| 48 | Onboard WS2812 RGB LED |
 
-GPIO 39-42 are also JTAG pins. This build uses 39-41 for the shared SPI bus, so
-use the USB-Serial-JTAG console rather than an external JTAG probe while the
-display is connected.
+GPIO 39-42 are also JTAG pins. This build uses 41 and 42 for the LCD/touch SPI
+bus, so an external JTAG probe cannot be used at the same time. The UART0
+console on 43/44 is untouched and remains available over the UART USB-C port.
 
 ## Power and signal notes
 
