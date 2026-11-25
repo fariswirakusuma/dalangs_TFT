@@ -470,7 +470,7 @@ esp_err_t ui_host_init(void)
     lv_obj_set_size(s_panel, UI_H_RES - 2 * UI_PANEL_MARGIN, UI_PANEL_H);
     lv_obj_set_pos(s_panel, UI_PANEL_MARGIN, UI_PANEL_Y);
     lv_obj_set_style_bg_color(s_panel, lv_color_hex(COLOR_SURFACE), 0);
-    lv_obj_set_style_bg_opa(s_panel, 230, 0);
+    lv_obj_set_style_bg_opa(s_panel, 190, 0);
     lv_obj_set_style_radius(s_panel, 8, 0);
     lv_obj_set_style_border_width(s_panel, 0, 0);
     lv_obj_set_style_pad_all(s_panel, 6, 0);
