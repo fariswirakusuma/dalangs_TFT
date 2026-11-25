@@ -9,15 +9,17 @@
 - **Display**: 2.8 inch 240x320 SPI TFT, ST7789 or ILI9341.
 - **Touch**: XPT2046 resistive controller.
 
-The red 2.8 inch modules with a 14-pin header are frequently **ILI9341**, so
-that is the default. Black modules are frequently **ST7789**. Confirm the
-controller before blaming the firmware. The driver is selected at build time:
+The default is **ILI9341** for this 2.8 inch module. Some modules use
+**ST7789** instead; confirm the controller before blaming the firmware. The
+driver is selected at build time:
 
 ```sh
-make menuconfig
-# dalangs_TFT -> LCD controller -> ST7789 / ILI9341
-# dalangs_TFT -> Invert panel colors
+make lcd-ili9341    # this build
+make lcd-st7789     # only if your panel is actually ST7789
+make build flash monitor
 ```
+
+Or use `make menuconfig` under `dalangs_TFT -> LCD controller`.
 
 ## Pin map
 
@@ -33,7 +35,7 @@ there and update this table in the same commit.
 | MISO | 14 | Touch `T_DO`; LCD MISO is optional |
 | CS | 47 | Board LCD header `CS` |
 | DC | 45 | Board LCD header `DC` |
-| RST | 2 | Safe reset pin (the header `RES` is IO0/BOOT) |
+| RST | 0 | Board LCD header `RES`; shared with BOOT |
 | BL | 21 | Board LCD header `BLK` |
 
 ### Touch (XPT2046)
@@ -70,7 +72,7 @@ The board's LCD header is 8 pins. Wire the red 14-pin module like this:
 | VCC | 3V3 | 3.3 V only |
 | GND | GND | Common ground |
 | CS | IO47 | LCD chip select |
-| RESET | IO2 | Avoids the BOOT button on IO0 |
+| RESET | IO0 | Board LCD header `RES`; shared with BOOT |
 | DC | IO45 | Data/command |
 | MOSI / SDI | IO41 | LCD header SDA |
 | SCK | IO42 | LCD header SCL |
@@ -96,7 +98,7 @@ both to IO14 by mistake; they are one shared SPI MISO line.
 | 43, 44 | UART0 console |
 | 45 | LCD DC on this board (also a strapping pin) |
 | 46 | Shutter button |
-| 0 | BOOT button / header RES (left unused) |
+| 0 | BOOT button / LCD RES (shared, by design) |
 | 3 | User switch |
 | 48 | Onboard WS2812 RGB LED |
 

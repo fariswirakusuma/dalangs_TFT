@@ -5,7 +5,7 @@ PORT ?= /dev/ttyACM0
 BAUD ?= 460800
 IDF := . "$(IDF_PATH)/export.sh" >/dev/null 2>&1 && idf.py
 
-.PHONY: help setup build wasm test lint-ui flash monitor flash-monitor erase clean distclean menuconfig size doctor
+.PHONY: help setup build wasm test lint-ui lcd-ili9341 lcd-st7789 lcd-selftest lcd-selftest-off flash monitor flash-monitor erase clean distclean menuconfig size doctor
 
 help:
 	@echo "dalangs_TFT controller"
@@ -15,6 +15,9 @@ help:
 	@echo "  make wasm          rebuild the .wasm applets"
 	@echo "  make test          run host unit tests"
 	@echo "  make lint-ui       check UI/pin/wasm boundaries"
+	@echo "  make lcd-ili9341   switch sdkconfig to the ILI9341 driver"
+	@echo "  make lcd-st7789    switch sdkconfig to the ST7789 driver"
+	@echo "  make lcd-selftest  draw color bars at boot (then rebuild)"
 	@echo "  make flash         flash over PORT=$(PORT)"
 	@echo "  make monitor       open the serial monitor"
 	@echo "  make flash-monitor flash and monitor"
@@ -48,6 +51,26 @@ test:
 
 lint-ui:
 	./scripts/lint_ui.sh
+
+lcd-ili9341:
+	@test -f sdkconfig || { echo "Run make setup first."; exit 1; }
+	@sed -i 's/^CONFIG_DALANGS_LCD_ST7789=y/# CONFIG_DALANGS_LCD_ST7789 is not set/; s/^# CONFIG_DALANGS_LCD_ILI9341 is not set/CONFIG_DALANGS_LCD_ILI9341=y/' sdkconfig
+	@echo "LCD controller: ILI9341. Run: make build flash monitor"
+
+lcd-st7789:
+	@test -f sdkconfig || { echo "Run make setup first."; exit 1; }
+	@sed -i 's/^# CONFIG_DALANGS_LCD_ST7789 is not set/CONFIG_DALANGS_LCD_ST7789=y/; s/^CONFIG_DALANGS_LCD_ILI9341=y/# CONFIG_DALANGS_LCD_ILI9341 is not set/' sdkconfig
+	@echo "LCD controller: ST7789. Run: make build flash monitor"
+
+lcd-selftest:
+	@test -f sdkconfig || { echo "Run make setup first."; exit 1; }
+	@sed -i 's/^# CONFIG_DALANGS_LCD_SELF_TEST is not set/CONFIG_DALANGS_LCD_SELF_TEST=y/' sdkconfig
+	@echo "LCD self test enabled. Run: make build flash monitor"
+
+lcd-selftest-off:
+	@test -f sdkconfig || { echo "Run make setup first."; exit 1; }
+	@sed -i 's/^CONFIG_DALANGS_LCD_SELF_TEST=y/# CONFIG_DALANGS_LCD_SELF_TEST is not set/' sdkconfig
+	@echo "LCD self test disabled."
 
 flash:
 	$(IDF) -p "$(PORT)" -b "$(BAUD)" flash

@@ -28,7 +28,7 @@ Built with **ESP-IDF v6.1 + CMake + Ninja + LVGL 8.4 + wasm3**.
   left unused by this firmware.
 
 The display uses the board's own SPI LCD header: SCL=IO42, SDA=IO41,
-DC=IO45, CS=IO47, BLK=IO21, with a safe RST on IO2. The XPT2046 adds T_CS=IO1 and T_DO=IO14;
+RES=IO0 (shared with BOOT), DC=IO45, CS=IO47, BLK=IO21. The XPT2046 adds T_CS=IO1 and T_DO=IO14;
 its CLK/DIN share the LCD bus. The exact wiring is in
 [docs/HARDWARE.md](docs/HARDWARE.md). All GPIO numbers live in
 [`main/include/pins.h`](main/include/pins.h).
@@ -134,10 +134,9 @@ board is required. Hardware checks are in [docs/TESTING.md](docs/TESTING.md).
 
 ## Limitations
 
-- ST7789 vs ILI9341 must match the panel. The default is ILI9341 because the
-  red 2.8 inch module in this build is usually ILI9341. Select the other one in
-  `menuconfig` under `dalangs_TFT -> LCD controller`. Wrong choice usually means
-  a blank or noisy screen, not a crash.
+- ST7789 vs ILI9341 must match the panel. The default is **ILI9341**. Select the
+  other one in `menuconfig` under `dalangs_TFT -> LCD controller`. Wrong choice
+  usually means a blank or noisy screen, not a crash.
 - The XPT2046 needs per-board calibration; defaults are only a starting point.
 - The camera preview uses a single buffer. Heavy load can tear the image; this is
   acceptable for a tuner, and the upgrade path is documented in the source.

@@ -8,6 +8,8 @@
 #include "esp_lcd_panel_vendor.h"
 #include "esp_log.h"
 #include "esp_lvgl_port.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "pins.h"
 
 #if CONFIG_DALANGS_LCD_ILI9341
@@ -21,6 +23,28 @@ static lv_disp_t *s_display;
 static const char *s_controller = "ILI9341";
 #else
 static const char *s_controller = "ST7789";
+#endif
+
+#if CONFIG_DALANGS_LCD_SELF_TEST
+static void show_color_bars(esp_lcd_panel_handle_t panel)
+{
+    static const uint16_t colors[8] = {
+        0xF800, 0x07E0, 0x001F, 0xFFFF, 0x0000, 0xFFE0, 0x07FF, 0xF81F,
+    };
+    uint16_t line[LCD_H_RES];
+    uint16_t column_color[LCD_H_RES];
+
+    for (int x = 0; x < LCD_H_RES; x++) {
+        column_color[x] = colors[(x * 8) / LCD_H_RES];
+    }
+    for (int y = 0; y < LCD_V_RES; y++) {
+        for (int x = 0; x < LCD_H_RES; x++) {
+            line[x] = column_color[x];
+        }
+        esp_lcd_panel_draw_bitmap(panel, 0, y, LCD_H_RES, y + 1, line);
+    }
+    vTaskDelay(pdMS_TO_TICKS(1500));
+}
 #endif
 
 lv_disp_t *board_display_handle(void)
@@ -47,7 +71,8 @@ static void backlight_on(void)
 
 esp_err_t board_display_init(void)
 {
-    ESP_LOGI(TAG, "%s %dx%d SPI panel on host %d", s_controller, LCD_H_RES, LCD_V_RES, LCD_HOST);
+    ESP_LOGI(TAG, "%s %dx%d SPI panel on host %d at %d MHz", s_controller, LCD_H_RES, LCD_V_RES,
+             LCD_HOST, LCD_PIXEL_CLOCK_HZ / 1000000);
 
     spi_bus_config_t bus_cfg = {
         .sclk_io_num = LCD_PIN_SCK,
@@ -96,6 +121,11 @@ esp_err_t board_display_init(void)
     ESP_RETURN_ON_ERROR(esp_lcd_panel_disp_on_off(panel, true), TAG, "display on failed");
 
     backlight_on();
+
+#if CONFIG_DALANGS_LCD_SELF_TEST
+    ESP_LOGI(TAG, "drawing color-bar self test");
+    show_color_bars(panel);
+#endif
 
     lvgl_port_cfg_t port_cfg = ESP_LVGL_PORT_INIT_CONFIG();
     port_cfg.task_stack = 12288;

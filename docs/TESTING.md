@@ -50,9 +50,10 @@ Run these in order after flashing. Record the result in the PR.
 
 | Symptom | First check |
 | --- | --- |
-| White or black screen | LCD controller choice in `menuconfig`, backlight pin |
+| White or black screen | LCD controller choice, backlight pin |
+| Garbage/static on screen | Wire RESET to IO0, lower `LCD_PIXEL_CLOCK_HZ` to 10-20 MHz, check DC/CS |
 | Colors inverted | `DALANGS_LCD_INVERT_COLOR`, `LCD_RGB_ORDER_BGR` |
-| Image shifted or wrapped | Wrong controller, reduce `LCD_PIXEL_CLOCK_HZ` to 20 MHz |
+| Image shifted or wrapped | Wrong controller, reduce `LCD_PIXEL_CLOCK_HZ` |
 | Touch X/Y swapped | `TOUCH_SWAP_XY` |
 | Touch mirrored | `TOUCH_MIRROR_X` / `TOUCH_MIRROR_Y` |
 | Touch edges off | `TOUCH_RAW_*` calibration |
@@ -60,6 +61,24 @@ Run these in order after flashing. Record the result in the PR.
 | Preview striped | PCLK/VSYNC wiring, lower XCLK to 10 MHz |
 | Wasm load fails | Rebuild with `make wasm`, reflash; check monitor message |
 | Tab switch resets | Brownout; check USB power and backlight current |
+
+## LCD color-bar self test
+
+To separate a panel/wiring fault from an application fault:
+
+```sh
+make lcd-selftest
+make build flash monitor
+```
+
+The panel shows eight solid bars for 1.5 seconds before LVGL starts. If the
+bars are clean, the panel and SPI wiring are good. If they are noise, fix the
+wiring/controller before debugging the UI. Turn it off with:
+
+```sh
+make lcd-selftest-off
+make build flash monitor
+```
 
 ## Measuring
 

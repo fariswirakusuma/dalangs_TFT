@@ -22,9 +22,8 @@
  *   43/44     UART0 console
  *   33-37     octal PSRAM
  *
- * The board's LCD header labels IO0 as RES, but this build drives reset from
- * IO2 instead so the BOOT button stays usable. DC remains IO45 (strapping)
- * and the backlight remains IO21, matching the header.
+ * These match the board's SPI LCD header. IO0 is shared with BOOT, so pressing
+ * BOOT also resets the panel; that is the board's intended wiring.
  *
  * The LCD and touch share one SPI bus. XPT2046 T_CLK/T_DIN are wired to the
  * LCD SCK/MOSI, T_DO goes to LCD_PIN_MISO, and T_CS is separate.
@@ -46,7 +45,7 @@
 #define LCD_PIN_MISO 14
 #define LCD_PIN_CS 47
 #define LCD_PIN_DC 45
-#define LCD_PIN_RST 2
+#define LCD_PIN_RST 0
 #define LCD_PIN_BCKL 21
 
 /* Native panel resolution. The UI is rotated to landscape. */
@@ -62,7 +61,7 @@
 #define UI_V_RES LCD_V_RES
 #endif
 
-#define LCD_PIXEL_CLOCK_HZ (40 * 1000 * 1000)
+#define LCD_PIXEL_CLOCK_HZ (20 * 1000 * 1000)
 #define LCD_CMD_BITS 8
 #define LCD_PARAM_BITS 8
 

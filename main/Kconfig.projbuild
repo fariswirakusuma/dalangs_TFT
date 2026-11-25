@@ -22,4 +22,11 @@ menu "dalangs_TFT"
             Most IPS 2.8 inch modules need color inversion. Disable if the
             image looks like a photographic negative.
 
+    config DALANGS_LCD_SELF_TEST
+        bool "Show color bars for 1.5 s at boot"
+        default n
+        help
+            Draws eight solid color bars before LVGL starts. Use this to
+            separate a panel/wiring fault from an application fault.
+
 endmenu
