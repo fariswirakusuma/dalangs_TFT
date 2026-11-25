@@ -114,3 +114,7 @@ black and the tuner still responds.
 
 If the image is mirrored or upside down, change the `set_vflip` / `set_hmirror`
 calls in `camera_tuner.c`. They are orientation settings, not wiring faults.
+
+If the preview has red and blue swapped while the native UI colors are correct,
+set `CAMERA_BYTE_SWAP` to `1` in `pins.h` and rebuild. Some OV5640 modules output
+the opposite RGB565 byte order.
