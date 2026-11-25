@@ -42,9 +42,13 @@ static void show_color_bars(esp_lcd_panel_handle_t panel)
     };
 
     size_t bytes = (size_t)LCD_H_RES * LCD_V_RES * sizeof(uint16_t);
-    uint16_t *buffer = heap_caps_malloc(bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    /* Internal DMA RAM is slower to allocate but avoids PSRAM/DMA quirks. */
+    uint16_t *buffer = heap_caps_malloc(bytes, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
     if (buffer == NULL) {
-        ESP_LOGW(TAG, "self-test skipped: no PSRAM buffer");
+        buffer = heap_caps_malloc(bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    }
+    if (buffer == NULL) {
+        ESP_LOGW(TAG, "self-test skipped: no frame buffer");
         return;
     }
 
@@ -54,7 +58,7 @@ static void show_color_bars(esp_lcd_panel_handle_t panel)
         }
         ESP_LOGI(TAG, "self-test: %s", steps[i].name);
         esp_lcd_panel_draw_bitmap(panel, 0, 0, LCD_H_RES, LCD_V_RES, buffer);
-        vTaskDelay(pdMS_TO_TICKS(500));
+        vTaskDelay(pdMS_TO_TICKS(800));
     }
 
     heap_caps_free(buffer);
@@ -133,6 +137,11 @@ esp_err_t board_display_init(void)
     /* Software reset covers boards where the hardware RESET wire is missing. */
     esp_lcd_panel_io_tx_param(io, 0x01, NULL, 0);
     vTaskDelay(pdMS_TO_TICKS(120));
+
+    uint8_t panel_id[3] = {0};
+    esp_err_t id_err = esp_lcd_panel_io_rx_param(io, 0x04, panel_id, sizeof(panel_id));
+    ESP_LOGI(TAG, "panel ID (%s): %02X %02X %02X", esp_err_to_name(id_err), panel_id[0],
+             panel_id[1], panel_id[2]);
 
     ESP_RETURN_ON_ERROR(esp_lcd_panel_init(panel), TAG, "panel init failed");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_invert_color(panel, CONFIG_DALANGS_LCD_INVERT_COLOR), TAG,

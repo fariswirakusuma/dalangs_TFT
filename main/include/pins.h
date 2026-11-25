@@ -61,7 +61,7 @@
 #define UI_V_RES LCD_V_RES
 #endif
 
-#define LCD_PIXEL_CLOCK_HZ (10 * 1000 * 1000)
+#define LCD_PIXEL_CLOCK_HZ (5 * 1000 * 1000)
 #define LCD_CMD_BITS 8
 #define LCD_PARAM_BITS 8
 
