@@ -79,6 +79,7 @@ Prefer the ESP-IDF component manager (`main/idf_component.yml`). Add a dependenc
 
 ```sh
 make test
+make lint-ui
 make build
 make wasm    # only if an applet changed
 ```

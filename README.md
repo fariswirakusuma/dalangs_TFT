@@ -119,6 +119,7 @@ on purpose.
 
 ```sh
 make test
+make lint-ui
 ```
 
 This runs host-side unit tests for camera parameter clamping and the widget
