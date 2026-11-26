@@ -106,9 +106,9 @@ static void camera_software_ae(uint32_t luma)
 {
     static int8_t gain = 24;
     int8_t next = gain;
-    if (luma < 80 && gain < 30) {
+    if (luma < 70 && gain < 30) {
         next = (int8_t)(gain + 1);
-    } else if (luma > 150 && gain > 0) {
+    } else if (luma > 110 && gain > 0) {
         next = (int8_t)(gain - 1);
     }
     if (next != gain) {
@@ -255,6 +255,16 @@ esp_err_t camera_tuner_init(void)
     s_sensor->set_aec2(s_sensor, 0);
     s_sensor->set_ae_level(s_sensor, 2);
     s_sensor->set_gainceiling(s_sensor, GAINCEILING_128X);
+    /* Denoise blurs a 320x240 preview, so trade it for edge sharpening. */
+    if (s_sensor->set_denoise) {
+        s_sensor->set_denoise(s_sensor, 0);
+    }
+    if (s_sensor->set_sharpness) {
+        s_sensor->set_sharpness(s_sensor, 2);
+    }
+    s_sensor->set_bpc(s_sensor, 1);
+    s_sensor->set_wpc(s_sensor, 1);
+    s_sensor->set_lenc(s_sensor, 1);
 #if CONFIG_DALANGS_CAMERA_COLORBAR
     s_sensor->set_colorbar(s_sensor, 1);
 #else
@@ -264,7 +274,7 @@ esp_err_t camera_tuner_init(void)
 
     s_sensor->set_exposure_ctrl(s_sensor, 0);
     s_sensor->set_gain_ctrl(s_sensor, 0);
-    s_sensor->set_aec_value(s_sensor, 1000);
+    s_sensor->set_aec_value(s_sensor, 700);
     s_sensor->set_agc_gain(s_sensor, 24);
 
     s_ready = true;
