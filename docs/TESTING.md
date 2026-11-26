@@ -29,6 +29,23 @@ make build
 The build must complete with no project-source warnings. Third-party warnings
 from LVGL or wasm3 are not actionable here.
 
+### CI packaging
+
+The `Firmware` workflow builds once inside the ESP-IDF container and then uses
+the esptool that ships with it, so no second toolchain is downloaded:
+
+- `image-info` parses the application image and fails the job if it is corrupt.
+- `merge-bin` produces `build/dalangs_tft-factory.bin`, bootloader and partition
+  table included, ready to flash at offset 0.
+
+Both steps take well under a second; the job timeout (40 minutes) exists so a
+stuck toolchain download fails instead of holding a runner. The artifact is kept
+for 14 days and flashing it needs no offsets:
+
+```sh
+esptool --chip esp32s3 -p /dev/ttyACM0 write_flash 0x0 dalangs_tft-factory.bin
+```
+
 ## Hardware acceptance
 
 Run these in order after flashing. Record the result in the PR.

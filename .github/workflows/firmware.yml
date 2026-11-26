@@ -15,6 +15,8 @@ jobs:
   host-tests:
     name: Host unit tests
     runs-on: ubuntu-latest
+    # A hung test must not hold a runner for the default hour.
+    timeout-minutes: 10
     steps:
       # test_wasm_abi builds third_party/wasm3 from source.
       - uses: actions/checkout@v4
@@ -27,25 +29,43 @@ jobs:
     name: ESP32-S3 build
     runs-on: ubuntu-latest
     needs: host-tests
+    # Toolchain download plus a cold build lands well under this; the limit is
+    # here so a stuck step fails instead of burning an hour of runner time.
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
+      # One container for build and packaging: no second toolchain download, and
+      # esptool is the version ESP-IDF ships.
       # TODO: pin the exact IDF patch once the project is tagged.
-      - name: Build with ESP-IDF
+      - name: Build, verify and package with esptool
         uses: espressif/esp-idf-ci-action@v1
         with:
           esp_idf_version: v6.1
           target: esp32s3
-          command: idf.py build
+          command: |
+            idf.py build &&
+            python -m esptool --chip esp32s3 image-info build/dalangs_tft.bin &&
+            python -m esptool --chip esp32s3 merge-bin \
+              -o build/dalangs_tft-factory.bin \
+              -fm dio -fs 16MB -ff 80m \
+              0x0 build/bootloader/bootloader.bin \
+              0x8000 build/partition_table/partition-table.bin \
+              0x10000 build/dalangs_tft.bin
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
           name: dalangs-tft-firmware
+          # The merged image is what a board is flashed with; the map and elf are
+          # kept for decoding a crash, and flash_args documents the offsets.
           path: |
-            build/*.bin
-            build/*.elf
-            build/*.map
+            build/dalangs_tft-factory.bin
+            build/dalangs_tft.bin
+            build/dalangs_tft.elf
+            build/dalangs_tft.map
+            build/flash_args
           if-no-files-found: error
+          retention-days: 14
