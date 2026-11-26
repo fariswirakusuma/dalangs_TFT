@@ -152,8 +152,10 @@ board is required. Hardware checks are in [docs/TESTING.md](docs/TESTING.md).
 - [Wasm ABI](docs/WASM_ABI.md)
 - [Testing](docs/TESTING.md)
 - [Git workflow](docs/GIT_WORKFLOW.md)
+- [Credits](docs/CREDITS.md)
 - [Contributing](CONTRIBUTING.md)
 
 ## License
 
-See [LICENSE](LICENSE). Third-party components keep their own licenses.
+See [LICENSE](LICENSE). Third-party components keep their own licenses; the
+ones this firmware relies on are listed in [docs/CREDITS.md](docs/CREDITS.md).
