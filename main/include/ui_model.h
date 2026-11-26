@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #define UI_MODEL_MAX_WIDGETS 8
 #define UI_MODEL_LABEL_LEN 24
@@ -11,15 +12,16 @@ typedef enum {
 } ui_widget_type_t;
 
 typedef struct {
-    ui_widget_type_t type;
+    uint8_t type;
+    /* Slider bounds are signed: the camera tuning range is -2..2. */
+    int8_t min;
+    int8_t max;
+    int8_t default_value;
     char label[UI_MODEL_LABEL_LEN];
-    int min;
-    int max;
-    int default_value;
 } ui_widget_t;
 
-/* 4 + 24 + 12 bytes, no padding between members. */
-_Static_assert(sizeof(ui_widget_t) == 40, "ui_widget_t layout changed");
+/* 4 + 24 bytes, no padding: every member is 1 byte wide. */
+_Static_assert(sizeof(ui_widget_t) == 28, "ui_widget_t layout changed");
 
 void ui_model_reset(void);
 

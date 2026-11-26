@@ -30,7 +30,11 @@ _Static_assert(CAM_SENSOR_W == 2 * CAM_FRAME_W && CAM_SENSOR_H == 2 * CAM_FRAME_
 static sensor_t *s_sensor;
 static cam_params_t s_params;
 static bool s_ready;
-static uint8_t *s_frame;
+/* Two preview buffers: the camera fills the back one while LVGL reads the front
+   one, then the pointers swap. A reader can still lose a frame to a swap, but it
+   never sees a half written image. */
+static uint8_t *s_frame[2];
+static volatile int s_front;
 static uint32_t s_frame_id;
 
 /* The sensor's own white balance never converges and its presets cannot go far
@@ -141,7 +145,7 @@ static void camera_software_ae(uint32_t luma) {
 
 void camera_tuner_task(void *arg) {
     (void)arg;
-    assert(s_frame != NULL && s_sensor != NULL);
+    assert(s_frame[0] != NULL && s_sensor != NULL);
 
     for (;;) {
         camera_fb_t *fb = esp_camera_fb_get();
@@ -151,7 +155,8 @@ void camera_tuner_task(void *arg) {
                          fb->height, (unsigned)fb->len);
                 s_frame_info_logged = true;
             }
-            if (s_frame != NULL && fb->width == CAM_SENSOR_W && fb->height == CAM_SENSOR_H) {
+            uint8_t *back = s_frame[s_front ^ 1];
+            if (back != NULL && fb->width == CAM_SENSOR_W && fb->height == CAM_SENSOR_H) {
                 if (fb->format == PIXFORMAT_YUV422 && fb->len >= CAM_SENSOR_W * CAM_SENSOR_H * 2) {
                     uint32_t luma_sum = 0;
                     uint32_t luma_n = 0;
@@ -161,7 +166,7 @@ void camera_tuner_task(void *arg) {
                     }
                     camera_software_ae(luma_sum / (luma_n ? luma_n : 1));
 
-                    yuv422_to_rgb565(fb->buf, (uint16_t *)s_frame);
+                    yuv422_to_rgb565(fb->buf, (uint16_t *)back);
 
                     if (s_wb_n > 0) {
                         uint32_t ar = s_wb_r / s_wb_n;
@@ -180,6 +185,7 @@ void camera_tuner_task(void *arg) {
                     }
                     s_wb_r = s_wb_g = s_wb_b = s_wb_n = 0;
 
+                    s_front ^= 1; /* publish the frame just written */
                     s_frame_id++;
                 }
             }
@@ -190,12 +196,14 @@ void camera_tuner_task(void *arg) {
 }
 
 esp_err_t camera_tuner_init(void) {
-    s_frame = heap_caps_malloc(CAM_FRAME_BYTES, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    if (s_frame == NULL) {
-        ESP_LOGE(TAG, "no PSRAM for the %d-byte preview buffer", CAM_FRAME_BYTES);
-        return ESP_ERR_NO_MEM;
+    for (int i = 0; i < 2; i++) {
+        s_frame[i] = heap_caps_malloc(CAM_FRAME_BYTES, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+        if (s_frame[i] == NULL) {
+            ESP_LOGE(TAG, "no PSRAM for the %d-byte preview buffer %d", CAM_FRAME_BYTES, i);
+            return ESP_ERR_NO_MEM;
+        }
+        memset(s_frame[i], 0, CAM_FRAME_BYTES);
     }
-    memset(s_frame, 0, CAM_FRAME_BYTES);
 
     camera_config_t cfg = {
         .pin_pwdn = CAM_PIN_PWDN,
@@ -220,9 +228,12 @@ esp_err_t camera_tuner_init(void) {
         .pixel_format = PIXFORMAT_YUV422,
         .frame_size = FRAMESIZE_VGA,
         .jpeg_quality = 12,
-        .fb_count = 2,
+        /* One driver buffer and WHEN_EMPTY: capture pauses until this task
+           returns the previous frame, so the sensor stops streaming VGA into
+           PSRAM at its own rate and the DMA no longer costs a core. */
+        .fb_count = 1,
         .fb_location = CAMERA_FB_IN_PSRAM,
-        .grab_mode = CAMERA_GRAB_LATEST,
+        .grab_mode = CAMERA_GRAB_WHEN_EMPTY,
     };
 
     esp_err_t err = esp_camera_init(&cfg);
@@ -294,7 +305,7 @@ void camera_tuner_reset(void) {
 }
 
 const uint8_t *camera_tuner_frame_buffer(void) {
-    return s_frame;
+    return s_frame[s_front];
 }
 
 size_t camera_tuner_frame_size(void) {

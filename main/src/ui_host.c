@@ -1,6 +1,5 @@
 #include "ui_host.h"
 
-#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -100,28 +99,26 @@ static void update_bench(void) {
     system_metrics_t m;
     system_monitor_read(&m);
 
-    uint32_t sram_used = m.sram_total > m.sram_free ? m.sram_total - m.sram_free : 0;
-    uint32_t psram_used = m.psram_total > m.psram_free ? m.psram_total - m.psram_free : 0;
+    unsigned sram_total = (unsigned)m.sram_total_kb4 * 4;
+    unsigned sram_used = ((unsigned)m.sram_total_kb4 - m.sram_free_kb4) * 4;
+    unsigned psram_total = (unsigned)m.psram_total_mb;
+    unsigned psram_used16 =
+        psram_total * 16 > m.psram_free_16th ? psram_total * 16 - m.psram_free_16th : 0;
 
-    lv_label_set_text_fmt(s_bench_sram, "%u / %u KB", (unsigned)(sram_used / 1024),
-                          (unsigned)(m.sram_total / 1024));
+    lv_label_set_text_fmt(s_bench_sram, "%u / %u KB", sram_used, sram_total);
     char buf[40];
-    snprintf(buf, sizeof(buf), "%.1f / %.1f MB", (double)psram_used / (1024.0 * 1024.0),
-             (double)m.psram_total / (1024.0 * 1024.0));
+    snprintf(buf, sizeof(buf), "%u.%u / %u MB", psram_used16 / 16, (psram_used16 % 16) * 10 / 16,
+             psram_total);
     lv_label_set_text(s_bench_psram, buf);
-    if (isnan(m.core_temp_c)) {
+    if (m.core_temp_c == SYSTEM_TEMP_UNAVAILABLE) {
         lv_label_set_text(s_bench_temp, "n/a");
     } else {
-        snprintf(buf, sizeof(buf), "%.1f C", (double)m.core_temp_c);
-        lv_label_set_text(s_bench_temp, buf);
+        lv_label_set_text_fmt(s_bench_temp, "%d C", (int)m.core_temp_c);
     }
     lv_label_set_text_fmt(s_bench_cpu, "%u / %u / %u %%", (unsigned)m.cpu0_pct,
                           (unsigned)m.cpu1_pct, (unsigned)m.cpu_avg_pct);
     lv_label_set_text_fmt(s_bench_wasm, "%u ms", (unsigned)m.wasm_load_ms);
-
-    uint32_t up = m.uptime_s;
-    lv_label_set_text_fmt(s_bench_uptime, "%02u:%02u:%02u", (unsigned)(up / 3600),
-                          (unsigned)((up % 3600) / 60), (unsigned)(up % 60));
+    lv_label_set_text_fmt(s_bench_uptime, "%u h", (unsigned)m.uptime_h);
 }
 
 static void render_bench(void) {
@@ -370,9 +367,12 @@ static void status_timer_cb(lv_timer_t *timer) {
        anything that allocates per frame shows up here. */
     static uint32_t s_audit_tick;
     if (++s_audit_tick % 60 == 0) {
-        ESP_LOGI(TAG, "leak watch: internal %u KB free, PSRAM %u KB free",
+        system_metrics_t m;
+        system_monitor_read(&m);
+        ESP_LOGI(TAG, "leak watch: internal %u KB free, PSRAM %u KB free, cpu %u/%u avg %u%%",
                  (unsigned)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),
-                 (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024));
+                 (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024),
+                 (unsigned)m.cpu0_pct, (unsigned)m.cpu1_pct, (unsigned)m.cpu_avg_pct);
     }
 #endif
 
@@ -394,8 +394,10 @@ static void camera_timer_cb(lv_timer_t *timer) {
     uint32_t frame_id = camera_tuner_frame_id();
     if (frame_id != s_last_frame_id) {
         s_last_frame_id = frame_id;
-        /* The descriptor points at a mutable PSRAM buffer; re-setting the source
-           forces LVGL to reopen and repaint it with the new data. */
+        /* The preview double buffers, so follow the front buffer and force LVGL
+           to reopen the image after the swap. */
+        s_camera_desc.data = camera_tuner_frame_buffer();
+        lv_img_cache_invalidate_src(&s_camera_desc);
         lv_img_set_src(s_camera_img, &s_camera_desc);
     }
 }

@@ -37,6 +37,12 @@ int ui_model_add_slider(const char *label, int min, int max, int default_value) 
         return -1;
     }
 
+    /* The model stores 8-bit bounds; reject a range it cannot represent rather
+       than truncating it silently. */
+    if (min < INT8_MIN || max > INT8_MAX || default_value < INT8_MIN || default_value > INT8_MAX) {
+        return -1;
+    }
+
     if (min > max) {
         int tmp = min;
         min = max;

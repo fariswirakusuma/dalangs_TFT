@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <stddef.h>
 
 /* Camera parameter IDs exposed to Wasm. */
@@ -23,14 +24,14 @@ typedef enum {
 #define CAM_TUNING_MAX 2
 
 typedef struct {
-    int brightness;
-    int contrast;
-    int saturation;
-    int effect;
+    /* sensor_t takes -2..2 for these three and 0..6 for the effect. */
+    int8_t brightness;
+    int8_t contrast;
+    int8_t saturation;
+    uint8_t effect;
 } cam_params_t;
 
-/* Four ints, no padding. */
-_Static_assert(sizeof(cam_params_t) == 16, "cam_params_t layout changed");
+_Static_assert(sizeof(cam_params_t) == 4, "cam_params_t layout changed");
 
 void cam_params_reset(cam_params_t *params);
 

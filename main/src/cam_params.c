@@ -47,16 +47,16 @@ bool cam_params_set(cam_params_t *params, int param_id, int value) {
 
     switch (param_id) {
     case CAM_PARAM_BRIGHTNESS:
-        params->brightness = value;
+        params->brightness = (int8_t)value;
         return true;
     case CAM_PARAM_CONTRAST:
-        params->contrast = value;
+        params->contrast = (int8_t)value;
         return true;
     case CAM_PARAM_SATURATION:
-        params->saturation = value;
+        params->saturation = (int8_t)value;
         return true;
     case CAM_PARAM_EFFECT:
-        params->effect = value;
+        params->effect = (uint8_t)value;
         return true;
     default:
         return false;

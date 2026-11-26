@@ -45,14 +45,17 @@ void system_monitor_read(system_metrics_t *out) {
         return;
     }
 
-    out->sram_total = (uint32_t)heap_caps_get_total_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    out->sram_free = (uint32_t)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    out->psram_total = (uint32_t)heap_caps_get_total_size(MALLOC_CAP_SPIRAM);
-    out->psram_free = (uint32_t)heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
-    out->wasm_load_ms = wasm_host_last_load_ms();
+    /* Units are packed down to a byte each; see system_metrics_t. */
+    out->sram_total_kb4 =
+        (uint8_t)(heap_caps_get_total_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT) / 4096);
+    out->sram_free_kb4 =
+        (uint8_t)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT) / 4096);
+    out->psram_total_mb = (uint8_t)(heap_caps_get_total_size(MALLOC_CAP_SPIRAM) / (1024 * 1024));
+    out->psram_free_16th = (uint8_t)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / (64 * 1024));
+    out->wasm_load_ms = (uint8_t)wasm_host_last_load_ms();
     int64_t now_us = esp_timer_get_time();
-    out->uptime_s = (uint32_t)(now_us / 1000000);
-    out->core_temp_c = NAN;
+    out->uptime_h = (uint8_t)(now_us / 3600000000LL);
+    out->core_temp_c = SYSTEM_TEMP_UNAVAILABLE;
 
     if (s_prev_cpu_us != 0 && (uint64_t)now_us > s_prev_cpu_us &&
         (uint64_t)now_us - s_prev_cpu_us >= 500000) {
@@ -98,7 +101,7 @@ void system_monitor_read(system_metrics_t *out) {
         float celsius = 0;
         esp_err_t err = temperature_sensor_get_celsius(s_temp_sensor, &celsius);
         if (err == ESP_OK) {
-            out->core_temp_c = celsius;
+            out->core_temp_c = (int8_t)lrintf(celsius);
         } else {
             static bool logged;
             if (!logged) {
@@ -106,22 +109,5 @@ void system_monitor_read(system_metrics_t *out) {
                 logged = true;
             }
         }
-    }
-}
-
-void system_monitor_format(char *out, size_t out_len) {
-    if (out == NULL || out_len == 0) {
-        return;
-    }
-
-    system_metrics_t m;
-    system_monitor_read(&m);
-
-    if (m.psram_total > 0) {
-        snprintf(out, out_len, "SRAM %uK  PSRAM %.1fM  WASM %ums", (unsigned)(m.sram_free / 1024),
-                 (double)m.psram_free / (1024.0 * 1024.0), (unsigned)m.wasm_load_ms);
-    } else {
-        snprintf(out, out_len, "SRAM %uK  PSRAM --  WASM %ums", (unsigned)(m.sram_free / 1024),
-                 (unsigned)m.wasm_load_ms);
     }
 }

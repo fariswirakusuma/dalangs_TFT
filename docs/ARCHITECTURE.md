@@ -120,9 +120,11 @@ assert instead of warning:
 | Preview and sensor handles non-NULL | `assert` at the camera task entry | the task only starts after a successful init |
 | Heap integrity, free and largest block, per minute | audit + leak watch | a flat pair of numbers is the leak test |
 
-`system_metrics_t` is the only struct with padding: 28 bytes of fields on 4-byte
-types leaves one tail byte. Packing it would turn 32-bit accesses unaligned,
-which traps on Xtensa, so the byte stays and the size is asserted instead.
+Every struct is padding free. `cam_params_t` is four bytes, `ui_widget_t` is 28
+(one byte per field plus the label) and `system_metrics_t` is 10: each value is
+narrowed to a byte with a unit that keeps its range (KB/4, MB/16, hours, whole
+degrees). `__attribute__((packed))` was not needed and would only have bought
+bytes at the cost of byte-wise member access.
 
 Shared state has a single writer: camera frames and the WB/AE state belong to
 the camera task, widgets, parameters and the canvas belong to the LVGL task, and
