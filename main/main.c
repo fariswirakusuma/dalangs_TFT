@@ -10,6 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "system_monitor.h"
+#include "tasks.h"
 #include "ui_host.h"
 #include "wasm_host.h"
 
@@ -90,7 +91,7 @@ void app_main(void) {
 
 #if CONFIG_DALANGS_CAMERA_ENABLE
     if (camera_err == ESP_OK) {
-        camera_tuner_start();
+        app_tasks_start();
     }
 #endif
 

@@ -163,6 +163,28 @@ static void style_tab(int applet_id, bool selected) {
     }
 }
 
+/* The camera image, the scrim over it and the canvas must never be painted when
+   they cannot be seen: compositing 320x240 twice per frame costs real CPU.
+   show_camera means "the preview is what the user wants to look at". */
+static void update_preview_layers(bool canvas) {
+    bool show_camera = !canvas && s_panel_hidden_by_user;
+
+    if (s_camera_img != NULL) {
+        if (show_camera) {
+            lv_obj_clear_flag(s_camera_img, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_add_flag(s_camera_img, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
+    if (s_scrim != NULL) {
+        if (show_camera) {
+            lv_obj_add_flag(s_scrim, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_clear_flag(s_scrim, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
+}
+
 static void panel_toggle_cb(lv_event_t *event) {
     (void)event;
     s_panel_hidden_by_user = !s_panel_hidden_by_user;
@@ -173,13 +195,7 @@ static void panel_toggle_cb(lv_event_t *event) {
         lv_obj_clear_flag(s_panel, LV_OBJ_FLAG_HIDDEN);
     }
 
-    if (s_scrim != NULL) {
-        if (canvas || s_panel_hidden_by_user) {
-            lv_obj_add_flag(s_scrim, LV_OBJ_FLAG_HIDDEN);
-        } else {
-            lv_obj_clear_flag(s_scrim, LV_OBJ_FLAG_HIDDEN);
-        }
-    }
+    update_preview_layers(canvas);
 
     lv_obj_t *label = lv_obj_get_child(s_panel_toggle, 0);
     if (label != NULL) {
@@ -557,15 +573,10 @@ void ui_host_switch_applet(int applet_id) {
     }
 
     bool canvas = ui_host_applet_uses_canvas(applet_id);
-    if (s_camera_img != NULL) {
-        if (canvas) {
-            lv_obj_add_flag(s_camera_img, LV_OBJ_FLAG_HIDDEN);
-        } else {
-            lv_obj_clear_flag(s_camera_img, LV_OBJ_FLAG_HIDDEN);
-        }
-    }
+    update_preview_layers(canvas);
     if (s_scrim != NULL) {
-        if (canvas || s_panel_hidden_by_user) {
+        bool covered = !canvas && !s_panel_hidden_by_user;
+        if (covered) {
             lv_obj_add_flag(s_scrim, LV_OBJ_FLAG_HIDDEN);
         } else {
             lv_obj_clear_flag(s_scrim, LV_OBJ_FLAG_HIDDEN);

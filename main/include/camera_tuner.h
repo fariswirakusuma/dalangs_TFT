@@ -7,7 +7,8 @@
 #include "esp_err.h"
 
 esp_err_t camera_tuner_init(void);
-void camera_tuner_start(void);
+/* Capture loop. Created by app_tasks_start(); it owns its own pacing. */
+void camera_tuner_task(void *arg);
 
 void camera_tuner_set_param(int param_id, int value);
 void camera_tuner_reset(void);

@@ -21,15 +21,11 @@ static const char *TAG = "CAMERA";
    softer than a 2x2 box average of a VGA frame. */
 #define CAM_SENSOR_W 640
 #define CAM_SENSOR_H 480
-#define CAM_TASK_STACK 4096
-#define CAM_TASK_PRIORITY 3
-#define CAM_TASK_CORE 1
 #define CAM_PERIOD_MS 50
 
 static sensor_t *s_sensor;
 static cam_params_t s_params;
 static bool s_ready;
-static bool s_task_started;
 static uint8_t *s_frame;
 static uint32_t s_frame_id;
 
@@ -139,7 +135,7 @@ static void camera_software_ae(uint32_t luma) {
     }
 }
 
-static void camera_task(void *arg) {
+void camera_tuner_task(void *arg) {
     (void)arg;
 
     for (;;) {
@@ -277,23 +273,6 @@ esp_err_t camera_tuner_init(void) {
     ESP_LOGI(TAG, "%s ready: %dx%d to %dx%d", s_sensor_name, CAM_SENSOR_W, CAM_SENSOR_H,
              CAM_FRAME_W, CAM_FRAME_H);
     return ESP_OK;
-}
-
-void camera_tuner_start(void) {
-    if (!s_ready || s_task_started) {
-        return;
-    }
-
-    static StaticTask_t task_buffer;
-    static StackType_t task_stack[CAM_TASK_STACK];
-    TaskHandle_t handle =
-        xTaskCreateStaticPinnedToCore(camera_task, "camera", CAM_TASK_STACK, NULL,
-                                      CAM_TASK_PRIORITY, task_stack, &task_buffer, CAM_TASK_CORE);
-    if (handle == NULL) {
-        ESP_LOGE(TAG, "camera task creation failed");
-        return;
-    }
-    s_task_started = true;
 }
 
 void camera_tuner_set_param(int param_id, int value) {

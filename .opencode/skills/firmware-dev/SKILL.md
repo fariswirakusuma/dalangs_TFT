@@ -28,6 +28,7 @@ description: ESP-IDF firmware workflow for dalangs_TFT. Use when editing C sourc
 - A failed PSRAM allocation must degrade gracefully: log, keep the UI alive, disable only the video path.
 - Do not allocate in a render loop or an LVGL event callback.
 - Use `xTaskCreateStaticPinnedToCore` for long-running tasks when the stack is known at compile time.
+- Create every task from `main/src/tasks.c` (`app_tasks_start()`); a module exposes a `*_task()` entry point and never spawns threads itself, so stack, priority and core stay auditable in one place.
 - Keep the LVGL task on core 0 and the camera capture task on core 1.
 
 ## Commands

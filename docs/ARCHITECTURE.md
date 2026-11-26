@@ -26,7 +26,13 @@ Both are compiled by `test/run.sh` on the host.
 | --- | --- | --- | --- | --- |
 | `main` | 0 | 8 KB | ESP-IDF | Init and start |
 | `lvgl` | 0 | 12 KB | `esp_lvgl_port` | Render, touch, timers, wasm calls |
-| `camera` | 1 | 4 KB static | `xTaskCreateStaticPinnedToCore` | Grab and copy RGB565 frames |
+| `camera` | 1 | 4 KB static | `app_tasks_start()` in `main/src/tasks.c` | Grab, convert and downscale frames |
+
+Every task this firmware creates is spawned from `main/src/tasks.c`; that file is
+the single place where stack size, priority and core affinity are declared, so
+the boot audit (`CONFIG_DALANGS_FIRMWARE_AUDIT`) can be checked against one
+table. Module code exposes a `*_task()` entry point and never spawns threads
+itself.
 
 The camera task is pinned to core 1 so capture does not compete with the LVGL
 task on core 0. The LVGL task is pinned to core 0 deliberately; wasm executes on
@@ -38,7 +44,7 @@ LVGL timers:
 | --- | --- |
 | 33 ms | `wasm_host_tick()` for animated applets |
 | 100 ms | Invalidate the camera image when a new frame arrived |
-| 1000 ms | Refresh the native status bar |
+| 1000 ms | Refresh the CPU badge and the BENCH values |
 
 ## Data flow
 
