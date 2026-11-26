@@ -26,6 +26,7 @@ static const char *TAG = "UI";
 
 static lv_obj_t *s_root;
 static lv_obj_t *s_camera_img;
+static lv_obj_t *s_scrim;
 static lv_obj_t *s_canvas;
 static lv_obj_t *s_status_label;
 static lv_obj_t *s_panel;
@@ -171,6 +172,14 @@ static void panel_toggle_cb(lv_event_t *event)
         lv_obj_add_flag(s_panel, LV_OBJ_FLAG_HIDDEN);
     } else {
         lv_obj_clear_flag(s_panel, LV_OBJ_FLAG_HIDDEN);
+    }
+
+    if (s_scrim != NULL) {
+        if (canvas || s_panel_hidden_by_user) {
+            lv_obj_add_flag(s_scrim, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_clear_flag(s_scrim, LV_OBJ_FLAG_HIDDEN);
+        }
     }
 
     lv_obj_t *label = lv_obj_get_child(s_panel_toggle, 0);
@@ -550,6 +559,13 @@ void ui_host_switch_applet(int applet_id)
             lv_obj_clear_flag(s_camera_img, LV_OBJ_FLAG_HIDDEN);
         }
     }
+    if (s_scrim != NULL) {
+        if (canvas || s_panel_hidden_by_user) {
+            lv_obj_add_flag(s_scrim, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_clear_flag(s_scrim, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
     if (canvas) {
         if (s_canvas != NULL) {
             lv_obj_clear_flag(s_canvas, LV_OBJ_FLAG_HIDDEN);
@@ -654,6 +670,16 @@ esp_err_t ui_host_init(void)
         lv_obj_set_pos(s_camera_img, 0, 0);
         lv_obj_clear_flag(s_camera_img, LV_OBJ_FLAG_SCROLLABLE);
     }
+
+    /* The camera sits behind the whole UI; without this scrim the bright preview
+       washes out the dark theme on every tab outside LIVE and DRAW. */
+    s_scrim = lv_obj_create(s_root);
+    lv_obj_remove_style_all(s_scrim);
+    lv_obj_set_size(s_scrim, UI_H_RES, UI_V_RES);
+    lv_obj_set_pos(s_scrim, 0, 0);
+    lv_obj_set_style_bg_color(s_scrim, lv_color_hex(0x000000), 0);
+    lv_obj_set_style_bg_opa(s_scrim, 220, 0);
+    lv_obj_add_flag(s_scrim, LV_OBJ_FLAG_IGNORE_LAYOUT);
 
     if (s_canvas_buf != NULL) {
         s_canvas = lv_canvas_create(s_root);
