@@ -13,9 +13,6 @@ esp_err_t ui_host_init(void);
  */
 void ui_host_switch_applet(int applet_id);
 
-/* Updates the native status bar text (top of the screen). */
-void ui_host_set_status(const char *text);
-
 /* Shows a short native error in the widget panel. */
 void ui_host_show_message(const char *text);
 

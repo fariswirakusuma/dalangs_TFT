@@ -15,7 +15,6 @@ typedef enum {
     APPLET_COUNT
 } applet_id_t;
 
-#define UI_STATUS_BAR_H 20
 #define UI_TAB_BAR_H 24
 #define UI_TAB_BAR_MARGIN_BOTTOM 16
 #define UI_PANEL_H 132

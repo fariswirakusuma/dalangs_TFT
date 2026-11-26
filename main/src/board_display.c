@@ -2,6 +2,7 @@
 
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
+#include "driver/ledc.h"
 #include "esp_check.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_ops.h"
@@ -94,12 +95,35 @@ const char *board_display_controller_name(void)
 static void backlight_on(void)
 {
 #if LCD_PIN_BCKL >= 0
-    gpio_config_t cfg = {
-        .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = 1ULL << LCD_PIN_BCKL,
+    /* Full brightness blows this panel out in a dim room, which reads as a hazy
+       picture; dim it over PWM instead of switching the pin on. LEDC timer 0 is
+       taken by the camera XCLK. */
+    ledc_timer_config_t timer = {
+        .speed_mode = LEDC_LOW_SPEED_MODE,
+        .duty_resolution = LEDC_TIMER_8_BIT,
+        .timer_num = LEDC_TIMER_1,
+        .freq_hz = 5000,
+        .clk_cfg = LEDC_AUTO_CLK,
     };
-    ESP_ERROR_CHECK(gpio_config(&cfg));
-    gpio_set_level(LCD_PIN_BCKL, 1);
+    ledc_channel_config_t channel = {
+        .gpio_num = LCD_PIN_BCKL,
+        .speed_mode = LEDC_LOW_SPEED_MODE,
+        .channel = LEDC_CHANNEL_1,
+        .timer_sel = LEDC_TIMER_1,
+        .duty = 0,
+        .hpoint = 0,
+    };
+    if (ledc_timer_config(&timer) != ESP_OK || ledc_channel_config(&channel) != ESP_OK) {
+        gpio_config_t cfg = {
+            .mode = GPIO_MODE_OUTPUT,
+            .pin_bit_mask = 1ULL << LCD_PIN_BCKL,
+        };
+        ESP_ERROR_CHECK(gpio_config(&cfg));
+        gpio_set_level(LCD_PIN_BCKL, 1);
+        return;
+    }
+    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 170);
+    ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
 #endif
 }
 

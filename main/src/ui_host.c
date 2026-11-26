@@ -16,10 +16,10 @@
 
 static const char *TAG = "UI";
 
-#define COLOR_BG 0x0B1220
-#define COLOR_SURFACE 0x111A2E
-#define COLOR_TEXT 0xE2E8F0
-#define COLOR_MUTED 0xB6C2D4
+#define COLOR_BG 0x05080F
+#define COLOR_SURFACE 0x101827
+#define COLOR_TEXT 0xFFFFFF
+#define COLOR_MUTED 0xCBD5E1
 #define COLOR_ACCENT 0x38BDF8
 #define COLOR_DARK 0x0B1220
 #define COLOR_CHROMA 0x07E0
@@ -32,8 +32,6 @@ static lv_obj_t *s_root;
 static lv_obj_t *s_camera_img;
 static lv_obj_t *s_scrim;
 static lv_obj_t *s_canvas;
-static lv_obj_t *s_status_label;
-static lv_obj_t *s_title_label;
 static lv_obj_t *s_panel;
 static lv_obj_t *s_content;
 static lv_obj_t *s_tabs[APPLET_COUNT];
@@ -62,14 +60,6 @@ static const char *const s_tab_icons[APPLET_COUNT] = {
     [APPLET_LIVE_CAM] = LV_SYMBOL_VIDEO,
     [APPLET_DRAW_PAD] = LV_SYMBOL_EDIT,
     [APPLET_BENCH] = LV_SYMBOL_LIST,
-};
-
-static const char *const s_tab_titles[APPLET_COUNT] = {
-    [APPLET_SLIDERS] = "Sliders",
-    [APPLET_FX] = "Effects",
-    [APPLET_LIVE_CAM] = "Live",
-    [APPLET_DRAW_PAD] = "Draw",
-    [APPLET_BENCH] = "Bench",
 };
 
 bool ui_host_applet_uses_canvas(int applet_id)
@@ -346,9 +336,6 @@ static void render_model(void)
 static void status_timer_cb(lv_timer_t *timer)
 {
     (void)timer;
-    char text[64];
-    system_monitor_format(text, sizeof(text));
-    ui_host_set_status(text);
     update_bench();
 }
 
@@ -532,13 +519,6 @@ void ui_host_canvas_flush(void)
     }
 }
 
-void ui_host_set_status(const char *text)
-{
-    if (s_status_label != NULL && text != NULL) {
-        lv_label_set_text(s_status_label, text);
-    }
-}
-
 void ui_host_show_message(const char *text)
 {
     if (s_content == NULL || text == NULL) {
@@ -570,10 +550,6 @@ void ui_host_switch_applet(int applet_id)
 
     for (int i = 0; i < APPLET_COUNT; i++) {
         style_tab(i, i == applet_id);
-    }
-
-    if (s_title_label != NULL) {
-        lv_label_set_text(s_title_label, s_tab_titles[applet_id]);
     }
 
     bool canvas = ui_host_applet_uses_canvas(applet_id);
@@ -716,32 +692,6 @@ esp_err_t ui_host_init(void)
         lv_obj_add_event_cb(s_canvas, canvas_event_cb, LV_EVENT_ALL, NULL);
         lv_obj_add_flag(s_canvas, LV_OBJ_FLAG_HIDDEN);
     }
-
-    lv_obj_t *status = make_plain(s_root);
-    lv_obj_set_size(status, UI_H_RES, UI_STATUS_BAR_H);
-    lv_obj_set_pos(status, 0, 0);
-    lv_obj_set_style_bg_color(status, lv_color_hex(COLOR_BG), 0);
-    lv_obj_set_style_bg_opa(status, 235, 0);
-    lv_obj_set_style_border_side(status, LV_BORDER_SIDE_BOTTOM, 0);
-    lv_obj_set_style_border_width(status, 1, 0);
-    lv_obj_set_style_border_color(status, lv_color_hex(COLOR_LINE), 0);
-
-    s_title_label = lv_label_create(status);
-    lv_obj_align(s_title_label, LV_ALIGN_LEFT_MID, 6, 0);
-    lv_label_set_text(s_title_label, APP_NAME);
-    lv_obj_set_style_text_font(s_title_label, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(s_title_label, lv_color_hex(COLOR_ACCENT), 0);
-
-    s_status_label = lv_label_create(status);
-    lv_obj_align(s_status_label, LV_ALIGN_RIGHT_MID, -6, 0);
-    lv_obj_set_width(s_status_label, UI_H_RES - 110);
-    lv_label_set_long_mode(s_status_label, LV_LABEL_LONG_DOT);
-    lv_obj_set_style_text_align(s_status_label, LV_TEXT_ALIGN_RIGHT, 0);
-    lv_obj_set_style_text_font(s_status_label, &lv_font_montserrat_12, 0);
-    lv_obj_set_style_text_color(s_status_label, lv_color_hex(COLOR_MUTED), 0);
-    lv_label_set_text(s_status_label, "booting...");
-
-
 
     s_panel = lv_obj_create(s_root);
     lv_obj_set_size(s_panel, UI_H_RES - 2 * UI_PANEL_MARGIN, UI_PANEL_H);
