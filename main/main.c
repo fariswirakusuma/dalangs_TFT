@@ -10,11 +10,35 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "system_monitor.h"
-#include "tasks.h"
 #include "ui_host.h"
 #include "wasm_host.h"
 
 static const char *TAG = "MAIN";
+
+/*
+ * Every RTOS task this firmware creates is spawned here so stack size, priority
+ * and core affinity sit next to app_main and the boot audit can be checked
+ * against one place. Modules expose a *_task() entry point and never spawn.
+ */
+#define CAMERA_TASK_STACK 4096
+#define CAMERA_TASK_PRIORITY 3
+#define CAMERA_TASK_CORE 1 /* core 0 keeps the LVGL task and the wasm ticks */
+
+static StaticTask_t s_camera_tcb;
+static StackType_t s_camera_stack[CAMERA_TASK_STACK];
+static TaskHandle_t s_camera_task;
+
+static void start_camera_task(void) {
+    if (s_camera_task != NULL || !camera_tuner_ready()) {
+        return;
+    }
+    s_camera_task = xTaskCreateStaticPinnedToCore(camera_tuner_task, "camera", CAMERA_TASK_STACK,
+                                                  NULL, CAMERA_TASK_PRIORITY, s_camera_stack,
+                                                  &s_camera_tcb, CAMERA_TASK_CORE);
+    if (s_camera_task == NULL) {
+        ESP_LOGE(TAG, "camera task creation failed");
+    }
+}
 
 #if CONFIG_DALANGS_FIRMWARE_AUDIT
 static void firmware_audit(void) {
@@ -91,7 +115,7 @@ void app_main(void) {
 
 #if CONFIG_DALANGS_CAMERA_ENABLE
     if (camera_err == ESP_OK) {
-        app_tasks_start();
+        start_camera_task();
     }
 #endif
 

@@ -6,7 +6,6 @@ idf_component_register(
         "src/camera_tuner.c"
         "src/cam_params.c"
         "src/system_monitor.c"
-        "src/tasks.c"
         "src/ui_model.c"
         "src/ui_host.c"
         "src/wasm_host.c"
