@@ -6,8 +6,7 @@
 static ui_widget_t s_widgets[UI_MODEL_MAX_WIDGETS];
 static int s_count;
 
-static void copy_label(char *dst, const char *src)
-{
+static void copy_label(char *dst, const char *src) {
     if (src == NULL) {
         dst[0] = '\0';
         return;
@@ -15,8 +14,7 @@ static void copy_label(char *dst, const char *src)
     snprintf(dst, UI_MODEL_LABEL_LEN, "%s", src);
 }
 
-static int add_widget(ui_widget_type_t type, const char *label)
-{
+static int add_widget(ui_widget_type_t type, const char *label) {
     if (label == NULL || label[0] == '\0' || s_count >= UI_MODEL_MAX_WIDGETS) {
         return -1;
     }
@@ -28,14 +26,12 @@ static int add_widget(ui_widget_type_t type, const char *label)
     return s_count++;
 }
 
-void ui_model_reset(void)
-{
+void ui_model_reset(void) {
     memset(s_widgets, 0, sizeof(s_widgets));
     s_count = 0;
 }
 
-int ui_model_add_slider(const char *label, int min, int max, int default_value)
-{
+int ui_model_add_slider(const char *label, int min, int max, int default_value) {
     int id = add_widget(UI_WIDGET_SLIDER, label);
     if (id < 0) {
         return -1;
@@ -54,18 +50,15 @@ int ui_model_add_slider(const char *label, int min, int max, int default_value)
     return id;
 }
 
-int ui_model_add_button(const char *label)
-{
+int ui_model_add_button(const char *label) {
     return add_widget(UI_WIDGET_BUTTON, label);
 }
 
-int ui_model_count(void)
-{
+int ui_model_count(void) {
     return s_count;
 }
 
-const ui_widget_t *ui_model_get(int widget_id)
-{
+const ui_widget_t *ui_model_get(int widget_id) {
     if (widget_id < 0 || widget_id >= s_count) {
         return NULL;
     }

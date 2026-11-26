@@ -18,8 +18,7 @@ static uint64_t s_prev_cpu_us;
 static uint64_t s_prev_busy_us[2];
 static uint8_t s_last_cpu[3];
 
-void system_monitor_init(void)
-{
+void system_monitor_init(void) {
     if (s_temp_sensor != NULL) {
         return;
     }
@@ -41,8 +40,7 @@ void system_monitor_init(void)
     }
 }
 
-void system_monitor_read(system_metrics_t *out)
-{
+void system_monitor_read(system_metrics_t *out) {
     if (out == NULL) {
         return;
     }
@@ -77,7 +75,8 @@ void system_monitor_read(system_metrics_t *out)
 
         uint64_t elapsed = (uint64_t)now_us - s_prev_cpu_us;
         for (int core = 0; core < 2; core++) {
-            uint64_t delta = busy[core] > s_prev_busy_us[core] ? busy[core] - s_prev_busy_us[core] : 0;
+            uint64_t delta =
+                busy[core] > s_prev_busy_us[core] ? busy[core] - s_prev_busy_us[core] : 0;
             uint32_t pct = (uint32_t)((delta * 100) / elapsed);
             s_last_cpu[core] = (uint8_t)(pct > 100 ? 100 : pct);
         }
@@ -110,8 +109,7 @@ void system_monitor_read(system_metrics_t *out)
     }
 }
 
-void system_monitor_format(char *out, size_t out_len)
-{
+void system_monitor_format(char *out, size_t out_len) {
     if (out == NULL || out_len == 0) {
         return;
     }

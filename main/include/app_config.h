@@ -19,5 +19,6 @@ typedef enum {
 #define UI_TAB_BAR_MARGIN_BOTTOM 16
 #define UI_PANEL_H 132
 #define UI_PANEL_MARGIN 4
-#define UI_PANEL_Y (UI_V_RES - UI_TAB_BAR_MARGIN_BOTTOM - UI_TAB_BAR_H - UI_PANEL_H - UI_PANEL_MARGIN)
+#define UI_PANEL_Y                                                                                 \
+    (UI_V_RES - UI_TAB_BAR_MARGIN_BOTTOM - UI_TAB_BAR_H - UI_PANEL_H - UI_PANEL_MARGIN)
 #define UI_CONTENT_H (UI_PANEL_H - 12)

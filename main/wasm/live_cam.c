@@ -12,14 +12,12 @@ extern void canvas_flush(void);
 #define RED 0xF800
 #define CYAN 0x07FF
 
-__attribute__((export_name("app_init"))) void app_init(void)
-{
+__attribute__((export_name("app_init"))) void app_init(void) {
     canvas_clear(TRANSPARENT);
     canvas_flush();
 }
 
-__attribute__((export_name("app_tick"))) void app_tick(int elapsed_ms)
-{
+__attribute__((export_name("app_tick"))) void app_tick(int elapsed_ms) {
     static int blink;
     blink = (blink + elapsed_ms) % 1000;
 

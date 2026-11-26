@@ -18,8 +18,7 @@ typedef struct {
 
 static state_t s_state;
 
-m3ApiRawFunction(stub_log)
-{
+m3ApiRawFunction(stub_log) {
     m3ApiGetArgMem(const char *, text);
     m3ApiGetArg(uint32_t, len);
     if (text != NULL && len > 0) {
@@ -28,10 +27,8 @@ m3ApiRawFunction(stub_log)
     m3ApiSuccess();
 }
 
-m3ApiRawFunction(stub_slider)
-{
-    m3ApiReturnType(int)
-    m3ApiGetArgMem(const char *, label);
+m3ApiRawFunction(stub_slider) {
+    m3ApiReturnType(int) m3ApiGetArgMem(const char *, label);
     m3ApiGetArg(int, min);
     m3ApiGetArg(int, max);
     m3ApiGetArg(int, def);
@@ -42,16 +39,13 @@ m3ApiRawFunction(stub_slider)
     m3ApiReturn(s_state.sliders++);
 }
 
-m3ApiRawFunction(stub_button)
-{
-    m3ApiReturnType(int)
-    m3ApiGetArgMem(const char *, label);
+m3ApiRawFunction(stub_button) {
+    m3ApiReturnType(int) m3ApiGetArgMem(const char *, label);
     (void)label;
     m3ApiReturn(s_state.buttons++);
 }
 
-m3ApiRawFunction(stub_cam_param)
-{
+m3ApiRawFunction(stub_cam_param) {
     m3ApiGetArg(int, param);
     m3ApiGetArg(int, value);
     s_state.cam_calls++;
@@ -60,33 +54,29 @@ m3ApiRawFunction(stub_cam_param)
     m3ApiSuccess();
 }
 
-m3ApiRawFunction(stub_reset)
-{
+m3ApiRawFunction(stub_reset) {
     s_state.resets++;
     m3ApiSuccess();
 }
 
-m3ApiRawFunction(stub_canvas)
-{
+m3ApiRawFunction(stub_canvas) {
     s_state.canvas_calls++;
     m3ApiSuccess();
 }
 
-static M3Result link_import(IM3Module module, const char *name, const char *sig, M3RawCall fn)
-{
+static M3Result link_import(IM3Module module, const char *name, const char *sig, M3RawCall fn) {
     M3Result result = m3_LinkRawFunction(module, "env", name, sig, fn);
     return result == m3Err_functionLookupFailed ? m3Err_none : result;
 }
 
-static M3Result link_all(IM3Module module)
-{
+static M3Result link_all(IM3Module module) {
     M3Result result;
-#define LINK(name, sig, fn)                        \
-    do {                                           \
-        result = link_import(module, name, sig, fn); \
-        if (result) {                              \
-            return result;                         \
-        }                                          \
+#define LINK(name, sig, fn)                                                                        \
+    do {                                                                                           \
+        result = link_import(module, name, sig, fn);                                               \
+        if (result) {                                                                              \
+            return result;                                                                         \
+        }                                                                                          \
     } while (0)
 
     LINK("log", "v(ii)", stub_log);
@@ -102,8 +92,7 @@ static M3Result link_all(IM3Module module)
     return m3Err_none;
 }
 
-static uint8_t *read_file(const char *path, uint32_t *out_len)
-{
+static uint8_t *read_file(const char *path, uint32_t *out_len) {
     FILE *file = fopen(path, "rb");
     assert(file != NULL);
 
@@ -121,8 +110,7 @@ static uint8_t *read_file(const char *path, uint32_t *out_len)
     return data;
 }
 
-static void run_applet(const char *dir, const char *name)
-{
+static void run_applet(const char *dir, const char *name) {
     char path[512];
     snprintf(path, sizeof(path), "%s/%s", dir, name);
 
@@ -190,8 +178,7 @@ static void run_applet(const char *dir, const char *name)
     free(bytes);
 }
 
-int main(void)
-{
+int main(void) {
     const char *dir = getenv("DALANGS_WASM_DIR");
     if (dir == NULL) {
         dir = "main/wasm";

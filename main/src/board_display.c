@@ -32,18 +32,13 @@ static const char *s_controller = "ST7789";
 #endif
 
 #if CONFIG_DALANGS_LCD_SELF_TEST
-static void show_color_bars(esp_lcd_panel_handle_t panel)
-{
+static void show_color_bars(esp_lcd_panel_handle_t panel) {
     static const struct {
         const char *name;
         uint16_t color;
     } steps[] = {
-        {"red", 0xF800},
-        {"green", 0x07E0},
-        {"blue", 0x001F},
-        {"white", 0xFFFF},
-        {"black", 0x0000},
-        {"gray", 0x8410},
+        {"red", 0xF800},   {"green", 0x07E0}, {"blue", 0x001F},
+        {"white", 0xFFFF}, {"black", 0x0000}, {"gray", 0x8410},
     };
 
     size_t bytes = (size_t)LCD_H_RES * LCD_V_RES * sizeof(uint16_t);
@@ -82,18 +77,15 @@ static void show_color_bars(esp_lcd_panel_handle_t panel)
 }
 #endif
 
-lv_disp_t *board_display_handle(void)
-{
+lv_disp_t *board_display_handle(void) {
     return s_display;
 }
 
-const char *board_display_controller_name(void)
-{
+const char *board_display_controller_name(void) {
     return s_controller;
 }
 
-static void backlight_on(void)
-{
+static void backlight_on(void) {
 #if LCD_PIN_BCKL >= 0
     /* Full brightness blows this panel out in a dim room, which reads as a hazy
        picture; dim it over PWM instead of switching the pin on. LEDC timer 0 is
@@ -127,8 +119,7 @@ static void backlight_on(void)
 #endif
 }
 
-esp_err_t board_display_init(void)
-{
+esp_err_t board_display_init(void) {
     ESP_LOGI(TAG, "%s %dx%d SPI panel on host %d at %d MHz", s_controller, LCD_H_RES, LCD_V_RES,
              LCD_HOST, LCD_PIXEL_CLOCK_HZ / 1000000);
 
@@ -140,7 +131,8 @@ esp_err_t board_display_init(void)
         .quadhd_io_num = -1,
         .max_transfer_sz = UI_H_RES * 40 * sizeof(uint16_t),
     };
-    ESP_RETURN_ON_ERROR(spi_bus_initialize(LCD_HOST, &bus_cfg, SPI_DMA_CH_AUTO), TAG, "spi bus init failed");
+    ESP_RETURN_ON_ERROR(spi_bus_initialize(LCD_HOST, &bus_cfg, SPI_DMA_CH_AUTO), TAG,
+                        "spi bus init failed");
 
     esp_lcd_panel_io_handle_t io = NULL;
     esp_lcd_panel_io_spi_config_t io_cfg = {
@@ -152,8 +144,8 @@ esp_err_t board_display_init(void)
         .spi_mode = LCD_SPI_MODE,
         .trans_queue_depth = 10,
     };
-    ESP_RETURN_ON_ERROR(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)LCD_HOST, &io_cfg, &io), TAG,
-                        "panel io init failed");
+    ESP_RETURN_ON_ERROR(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)LCD_HOST, &io_cfg, &io),
+                        TAG, "panel io init failed");
 
     esp_lcd_panel_handle_t panel = NULL;
     esp_lcd_panel_dev_config_t panel_cfg = {
@@ -167,9 +159,11 @@ esp_err_t board_display_init(void)
     };
 
 #if CONFIG_DALANGS_LCD_ILI9341
-    ESP_RETURN_ON_ERROR(esp_lcd_new_panel_ili9341(io, &panel_cfg, &panel), TAG, "ILI9341 create failed");
+    ESP_RETURN_ON_ERROR(esp_lcd_new_panel_ili9341(io, &panel_cfg, &panel), TAG,
+                        "ILI9341 create failed");
 #else
-    ESP_RETURN_ON_ERROR(esp_lcd_new_panel_st7789(io, &panel_cfg, &panel), TAG, "ST7789 create failed");
+    ESP_RETURN_ON_ERROR(esp_lcd_new_panel_st7789(io, &panel_cfg, &panel), TAG,
+                        "ST7789 create failed");
 #endif
 
     ESP_RETURN_ON_ERROR(esp_lcd_panel_reset(panel), TAG, "panel reset failed");
@@ -215,14 +209,16 @@ esp_err_t board_display_init(void)
         .hres = LCD_H_RES,
         .vres = LCD_V_RES,
         .monochrome = false,
-        .rotation = {
-            .swap_xy = false,
-            .mirror_x = LCD_MIRROR_X,
-            .mirror_y = LCD_MIRROR_Y,
-        },
-        .flags = {
-            .buff_dma = true,
-        },
+        .rotation =
+            {
+                .swap_xy = false,
+                .mirror_x = LCD_MIRROR_X,
+                .mirror_y = LCD_MIRROR_Y,
+            },
+        .flags =
+            {
+                .buff_dma = true,
+            },
     };
     if (!lvgl_port_lock(0)) {
         ESP_LOGE(TAG, "lvgl lock failed while adding display");

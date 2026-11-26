@@ -5,7 +5,7 @@ PORT ?= /dev/ttyACM0
 BAUD ?= 460800
 IDF := . "$(IDF_PATH)/export.sh" >/dev/null 2>&1 && idf.py
 
-.PHONY: help setup build wasm test lint-ui lcd-ili9341 lcd-st7789 lcd-mode0 lcd-mode3 lcd-selftest lcd-selftest-off camera-on camera-off camera-colorbar camera-colorbar-off audit audit-off touch-debug touch-debug-off wasm-smoke wasm-smoke-off flash monitor flash-monitor erase clean distclean menuconfig size doctor
+.PHONY: help setup build wasm test format lint-ui lcd-ili9341 lcd-st7789 lcd-mode0 lcd-mode3 lcd-selftest lcd-selftest-off camera-on camera-off camera-colorbar camera-colorbar-off audit audit-off touch-debug touch-debug-off wasm-smoke wasm-smoke-off flash monitor flash-monitor erase clean distclean menuconfig size doctor
 
 help:
 	@echo "dalangs_TFT controller"
@@ -14,6 +14,7 @@ help:
 	@echo "  make build         build firmware with CMake/Ninja"
 	@echo "  make wasm          rebuild the .wasm applets"
 	@echo "  make test          run host unit tests"
+	@echo "  make format        apply clang-format (LLVM) to the C sources"
 	@echo "  make lint-ui       check UI/pin/wasm boundaries"
 	@echo "  make lcd-ili9341   switch sdkconfig to the ILI9341 driver"
 	@echo "  make lcd-st7789    switch sdkconfig to the ST7789 driver"
@@ -50,6 +51,10 @@ setup:
 build:
 	@test -d "$(IDF_PATH)" || { echo "ESP-IDF not found at $(IDF_PATH). Set IDF_PATH."; exit 1; }
 	$(IDF) build
+
+format:
+	@clang-format -i main/main.c main/src/*.c main/include/*.h main/wasm/*.c test/*.c
+	@echo "clang-format applied (generated fonts are skipped on purpose)"
 
 wasm:
 	./scripts/build_wasm.sh

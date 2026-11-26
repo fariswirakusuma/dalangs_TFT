@@ -1,7 +1,6 @@
 #include "cam_params.h"
 
-void cam_params_reset(cam_params_t *params)
-{
+void cam_params_reset(cam_params_t *params) {
     if (params == NULL) {
         return;
     }
@@ -11,8 +10,7 @@ void cam_params_reset(cam_params_t *params)
     params->effect = CAM_EFFECT_NONE;
 }
 
-int cam_params_clamp(int param_id, int value)
-{
+int cam_params_clamp(int param_id, int value) {
     switch (param_id) {
     case CAM_PARAM_BRIGHTNESS:
     case CAM_PARAM_CONTRAST:
@@ -40,8 +38,7 @@ int cam_params_clamp(int param_id, int value)
     }
 }
 
-bool cam_params_set(cam_params_t *params, int param_id, int value)
-{
+bool cam_params_set(cam_params_t *params, int param_id, int value) {
     if (params == NULL) {
         return false;
     }

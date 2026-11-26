@@ -3,8 +3,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-static void test_defaults(void)
-{
+static void test_defaults(void) {
     cam_params_t p;
     p.brightness = 99;
     cam_params_reset(&p);
@@ -14,8 +13,7 @@ static void test_defaults(void)
     assert(p.effect == CAM_EFFECT_NONE);
 }
 
-static void test_clamp(void)
-{
+static void test_clamp(void) {
     assert(cam_params_clamp(CAM_PARAM_BRIGHTNESS, -9) == CAM_TUNING_MIN);
     assert(cam_params_clamp(CAM_PARAM_CONTRAST, 9) == CAM_TUNING_MAX);
     assert(cam_params_clamp(CAM_PARAM_SATURATION, 1) == 1);
@@ -23,8 +21,7 @@ static void test_clamp(void)
     assert(cam_params_clamp(CAM_PARAM_EFFECT, 42) == CAM_EFFECT_SEPIA);
 }
 
-static void test_set(void)
-{
+static void test_set(void) {
     cam_params_t p;
     cam_params_reset(&p);
 
@@ -41,8 +38,7 @@ static void test_set(void)
     assert(!cam_params_set(NULL, CAM_PARAM_BRIGHTNESS, 1));
 }
 
-int main(void)
-{
+int main(void) {
     test_defaults();
     test_clamp();
     test_set();

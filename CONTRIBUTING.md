@@ -69,6 +69,13 @@ Prefer the ESP-IDF component manager (`main/idf_component.yml`). Add a dependenc
 ## Code rules
 
 - C17, 4-space indentation, braces on the same line.
+- Formatting is clang-format, LLVM base, 4-space indent, 100 columns
+  (`.clang-format`). Run `make format` before committing; `.clangd` points the
+  language server at `build/compile_commands.json`.
+- Bitmap fonts are generated, not hand-written. `main/src/fonts` holds the
+  output of `lv_font_conv` (build-time only, never linked into the firmware as
+  a tool). Regenerate with the command recorded in the file header when a size
+  or character range changes.
 - Public headers in `main/include`, private helpers `static`.
 - `pins.h` is the only place with GPIO numbers.
 - English comments and documentation.

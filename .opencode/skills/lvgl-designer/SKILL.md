@@ -11,19 +11,21 @@ description: Design and review LVGL 8.4 screens for the 320x240 landscape TFT in
 - The panel scan uses **MX mirror**; touch X mirrors to match.
 - The camera preview is a full-screen background image.
 - Native chrome is owned by C, never by wasm:
-  - top status bar: 18 px, system metrics + HIDE/SHOW panel toggle
-  - bottom tab bar: 24 px, applet switch, 16 px above the lower edge (resistive dead zone)
-  - wasm widget panel: 120 px, rounded, ~59% opaque dark surface, hidden for canvas applets
+  - no top status bar: BENCH already reports the same metrics
+  - bottom tab bar: 24 px icon-only tabs using `LV_SYMBOL_*`, 16 px above the lower edge (resistive dead zone)
+  - wasm widget panel: 132 px, rounded, scrollable with a 10 px finger-size scrollbar, hidden for canvas applets
+  - HIDE/SHOW sits under the top edge and is the shortest path back to a full-screen preview
 - Canvas applets: LIVE and DRAW. BENCH is a native metrics page.
 
 ## Tokens
 
 | Token | Value |
 | --- | --- |
-| Background | `#0B1220` |
-| Surface | `#111A2E` at 80% opacity |
-| Text primary | `#E2E8F0` |
-| Text muted | `#94A3B8` |
+| Background | `#05080F` |
+| Surface | `#101827` at 88% opacity |
+| Text primary | `#FFFFFF` |
+| Text muted | `#CBD5E1` |
+| Font | IBM Plex Sans 14/16/20 (`main/src/fonts`), Montserrat only for symbols |
 | Accent | `#38BDF8` |
 | Success | `#22C55E` |
 | Danger | `#EF4444` |
@@ -39,14 +41,17 @@ Use `lv_color_hex()` and `LV_OPA_*`; do not invent a second palette per applet.
 - Selected tab must be visually distinct (accent background, dark text).
 - Every control must be reachable with one thumb; no double-tap or long-press required.
 - Never block the LVGL task for more than a few milliseconds. Heavy work belongs on another task.
-- Always provide a way to hide the settings panel so the camera preview is not blocked; the status-bar HIDE/SHOW button is the current pattern.
+- Always provide a way to hide the settings panel so the camera preview is not
+  blocked; the HIDE/SHOW button under the top edge is the current pattern. An
+  opaque surface covers the camera outside LIVE and DRAW so the theme stays dark.
 - BENCH shows used/total SRAM, used/total PSRAM, core temperature, last wasm load time, and uptime.
 
 ## Applet contract
 
 Wasm applets declare widgets through `ui_slider()` and `ui_button()`. They do not create LVGL objects and do not receive pointers. The host renders, styles, and frees them.
 
-Canvas applets draw with `canvas_*` imports into a chroma-keyed RGB565 layer. Clear to `0xF81F` (magenta) for transparency.
+Canvas applets draw with `canvas_*` imports into an RGB565 layer. Clearing to
+`0x07E0` means "copy the live camera frame here"; there is no chroma key left.
 
 ## Review checklist
 

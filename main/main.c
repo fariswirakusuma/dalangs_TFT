@@ -16,8 +16,7 @@
 static const char *TAG = "MAIN";
 
 #if CONFIG_DALANGS_FIRMWARE_AUDIT
-static void firmware_audit(void)
-{
+static void firmware_audit(void) {
     ESP_LOGI(TAG, "heap integrity: %s", heap_caps_check_integrity_all(true) ? "OK" : "CORRUPT");
     ESP_LOGI(TAG, "heap: %u KB internal free, %u KB PSRAM free",
              (unsigned)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),
@@ -44,8 +43,7 @@ static void firmware_audit(void)
 }
 #endif
 
-void app_main(void)
-{
+void app_main(void) {
     ESP_LOGI(TAG, "%s %s starting", APP_NAME, APP_VERSION);
 
     ESP_ERROR_CHECK(board_display_init());
@@ -70,7 +68,8 @@ void app_main(void)
     if (lvgl_port_lock(0)) {
         for (int i = 0; i < APPLET_COUNT; i++) {
             esp_err_t err = wasm_host_load(i);
-            ESP_LOGI(TAG, "wasm smoke %d: %s (%u ms)", i, err == ESP_OK ? "ok" : wasm_host_last_error(),
+            ESP_LOGI(TAG, "wasm smoke %d: %s (%u ms)", i,
+                     err == ESP_OK ? "ok" : wasm_host_last_error(),
                      (unsigned)wasm_host_last_load_ms());
         }
         lvgl_port_unlock();

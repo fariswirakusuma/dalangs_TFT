@@ -16,16 +16,14 @@ extern void canvas_flush(void);
 static int s_last_x = -1;
 static int s_last_y = -1;
 
-__attribute__((export_name("app_init"))) void app_init(void)
-{
+__attribute__((export_name("app_init"))) void app_init(void) {
     s_last_x = -1;
     s_last_y = -1;
     canvas_clear(TRANSPARENT);
     canvas_flush();
 }
 
-__attribute__((export_name("app_touch"))) void app_touch(int x, int y, int pressed)
-{
+__attribute__((export_name("app_touch"))) void app_touch(int x, int y, int pressed) {
     if (!pressed) {
         s_last_x = -1;
         s_last_y = -1;

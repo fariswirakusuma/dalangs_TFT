@@ -9,6 +9,7 @@
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "esp_lvgl_port.h"
+#include "fonts.h"
 #include "pins.h"
 #include "system_monitor.h"
 #include "ui_model.h"
@@ -55,42 +56,38 @@ static int s_applet = -1;
 /* Icons are LVGL's bundled Font Awesome glyphs; the tab titles do not fit at
    320 px next to them, so the name lives in the status bar instead. */
 static const char *const s_tab_icons[APPLET_COUNT] = {
-    [APPLET_SLIDERS] = LV_SYMBOL_SETTINGS,
-    [APPLET_FX] = LV_SYMBOL_IMAGE,
-    [APPLET_LIVE_CAM] = LV_SYMBOL_VIDEO,
-    [APPLET_DRAW_PAD] = LV_SYMBOL_EDIT,
+    [APPLET_SLIDERS] = LV_SYMBOL_SETTINGS, [APPLET_FX] = LV_SYMBOL_IMAGE,
+    [APPLET_LIVE_CAM] = LV_SYMBOL_VIDEO,   [APPLET_DRAW_PAD] = LV_SYMBOL_EDIT,
     [APPLET_BENCH] = LV_SYMBOL_LIST,
 };
 
-bool ui_host_applet_uses_canvas(int applet_id)
-{
+bool ui_host_applet_uses_canvas(int applet_id) {
     return applet_id == APPLET_LIVE_CAM || applet_id == APPLET_DRAW_PAD;
 }
 
 static lv_obj_t *make_plain(lv_obj_t *parent);
 
-static lv_obj_t *bench_add_row(const char *name, lv_obj_t **value_out)
-{
+static lv_obj_t *bench_add_row(const char *name, lv_obj_t **value_out) {
     lv_obj_t *row = make_plain(s_content);
     lv_obj_set_size(row, lv_pct(100), 18);
     lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(row, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_flex_align(row, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER,
+                          LV_FLEX_ALIGN_CENTER);
 
     lv_obj_t *name_label = lv_label_create(row);
     lv_label_set_text(name_label, name);
-    lv_obj_set_style_text_font(name_label, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(name_label, &plex_14, 0);
     lv_obj_set_style_text_color(name_label, lv_color_hex(COLOR_MUTED), 0);
 
     lv_obj_t *value_label = lv_label_create(row);
     lv_label_set_text(value_label, "--");
-    lv_obj_set_style_text_font(value_label, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_font(value_label, &plex_14, 0);
     lv_obj_set_style_text_color(value_label, lv_color_hex(COLOR_TEXT), 0);
     *value_out = value_label;
     return row;
 }
 
-static void update_bench(void)
-{
+static void update_bench(void) {
     if (s_applet != APPLET_BENCH || s_bench_sram == NULL) {
         return;
     }
@@ -122,8 +119,7 @@ static void update_bench(void)
                           (unsigned)((up % 3600) / 60), (unsigned)(up % 60));
 }
 
-static void render_bench(void)
-{
+static void render_bench(void) {
     lv_obj_clean(s_content);
     s_bench_sram = NULL;
     s_bench_psram = NULL;
@@ -145,8 +141,7 @@ static void render_bench(void)
     update_bench();
 }
 
-static lv_obj_t *make_plain(lv_obj_t *parent)
-{
+static lv_obj_t *make_plain(lv_obj_t *parent) {
     lv_obj_t *obj = lv_obj_create(parent);
     lv_obj_remove_style_all(obj);
     lv_obj_set_style_bg_opa(obj, LV_OPA_TRANSP, 0);
@@ -154,8 +149,7 @@ static lv_obj_t *make_plain(lv_obj_t *parent)
     return obj;
 }
 
-static void style_tab(int applet_id, bool selected)
-{
+static void style_tab(int applet_id, bool selected) {
     lv_obj_t *tab = s_tabs[applet_id];
     if (tab == NULL) {
         return;
@@ -168,8 +162,7 @@ static void style_tab(int applet_id, bool selected)
     }
 }
 
-static void panel_toggle_cb(lv_event_t *event)
-{
+static void panel_toggle_cb(lv_event_t *event) {
     (void)event;
     s_panel_hidden_by_user = !s_panel_hidden_by_user;
     bool canvas = ui_host_applet_uses_canvas(s_applet);
@@ -193,8 +186,7 @@ static void panel_toggle_cb(lv_event_t *event)
     }
 }
 
-static void tab_event_cb(lv_event_t *event)
-{
+static void tab_event_cb(lv_event_t *event) {
     int applet_id = (int)(intptr_t)lv_event_get_user_data(event);
     lv_event_code_t code = lv_event_get_code(event);
 #if CONFIG_DALANGS_TOUCH_DEBUG
@@ -205,8 +197,7 @@ static void tab_event_cb(lv_event_t *event)
     }
 }
 
-static void slider_event_cb(lv_event_t *event)
-{
+static void slider_event_cb(lv_event_t *event) {
     lv_obj_t *slider = lv_event_get_target(event);
     int widget_id = (int)(intptr_t)lv_obj_get_user_data(slider);
     int value = lv_slider_get_value(slider);
@@ -223,14 +214,12 @@ static void slider_event_cb(lv_event_t *event)
     wasm_host_event(widget_id, value);
 }
 
-static void button_event_cb(lv_event_t *event)
-{
+static void button_event_cb(lv_event_t *event) {
     int widget_id = (int)(intptr_t)lv_obj_get_user_data(lv_event_get_target(event));
     wasm_host_event(widget_id, 1);
 }
 
-static void add_slider_row(const ui_widget_t *widget, int widget_id)
-{
+static void add_slider_row(const ui_widget_t *widget, int widget_id) {
     lv_obj_t *row = make_plain(s_content);
     lv_obj_set_size(row, lv_pct(100), 38);
     lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
@@ -239,7 +228,7 @@ static void add_slider_row(const ui_widget_t *widget, int widget_id)
 
     lv_obj_t *name = lv_label_create(row);
     lv_obj_set_width(name, 88);
-    lv_obj_set_style_text_font(name, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(name, &plex_16, 0);
     lv_obj_set_style_text_color(name, lv_color_hex(COLOR_TEXT), 0);
     lv_label_set_text(name, widget->label);
 
@@ -259,14 +248,14 @@ static void add_slider_row(const ui_widget_t *widget, int widget_id)
 
     lv_obj_t *value = lv_label_create(row);
     lv_obj_set_width(value, 34);
-    lv_obj_set_style_text_font(value, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(value, &plex_16, 0);
     lv_obj_set_style_text_align(value, LV_TEXT_ALIGN_RIGHT, 0);
     lv_obj_set_style_text_color(value, lv_color_hex(COLOR_ACCENT), 0);
     lv_label_set_text_fmt(value, "%d", widget->default_value);
 }
 
-static void add_button(const ui_widget_t *widget, int widget_id, lv_coord_t width, lv_coord_t height)
-{
+static void add_button(const ui_widget_t *widget, int widget_id, lv_coord_t width,
+                       lv_coord_t height) {
     lv_obj_t *button = lv_btn_create(s_content);
     lv_obj_set_size(button, width, height);
     lv_obj_set_style_radius(button, 6, 0);
@@ -275,17 +264,20 @@ static void add_button(const ui_widget_t *widget, int widget_id, lv_coord_t widt
     lv_obj_set_style_border_width(button, 1, 0);
     lv_obj_set_style_border_color(button, lv_color_hex(0x334155), 0);
     lv_obj_set_style_shadow_width(button, 0, 0);
+    lv_obj_set_style_bg_color(button, lv_color_hex(COLOR_ACCENT), LV_STATE_PRESSED);
+    lv_obj_set_style_text_color(button, lv_color_hex(COLOR_DARK), LV_STATE_PRESSED);
+    lv_obj_set_style_border_color(button, lv_color_hex(COLOR_ACCENT), LV_STATE_PRESSED);
     lv_obj_set_user_data(button, (void *)(intptr_t)widget_id);
     lv_obj_add_event_cb(button, button_event_cb, LV_EVENT_CLICKED, NULL);
 
     lv_obj_t *label = lv_label_create(button);
     lv_obj_set_style_text_color(label, lv_color_hex(COLOR_TEXT), 0);
+    lv_obj_set_style_text_font(label, &plex_16, 0);
     lv_label_set_text(label, widget->label);
     lv_obj_center(label);
 }
 
-static void render_model(void)
-{
+static void render_model(void) {
     lv_obj_clean(s_content);
 
     int count = ui_model_count();
@@ -328,19 +320,17 @@ static void render_model(void)
         if (widget->type == UI_WIDGET_SLIDER) {
             add_slider_row(widget, i);
         } else {
-            add_button(widget, i, 300, 30);
+            add_button(widget, i, lv_pct(100), 38);
         }
     }
 }
 
-static void status_timer_cb(lv_timer_t *timer)
-{
+static void status_timer_cb(lv_timer_t *timer) {
     (void)timer;
     update_bench();
 }
 
-static void camera_timer_cb(lv_timer_t *timer)
-{
+static void camera_timer_cb(lv_timer_t *timer) {
     (void)timer;
     if (s_camera_img == NULL) {
         return;
@@ -356,8 +346,7 @@ static void camera_timer_cb(lv_timer_t *timer)
 }
 
 #if CONFIG_DALANGS_TOUCH_DEBUG
-static void touch_marker_timer_cb(lv_timer_t *timer)
-{
+static void touch_marker_timer_cb(lv_timer_t *timer) {
     (void)timer;
     lv_indev_t *indev = lv_indev_get_next(NULL);
     if (indev == NULL || s_touch_marker == NULL) {
@@ -375,16 +364,14 @@ static void touch_marker_timer_cb(lv_timer_t *timer)
 }
 #endif
 
-static void tick_timer_cb(lv_timer_t *timer)
-{
+static void tick_timer_cb(lv_timer_t *timer) {
     (void)timer;
     if (s_applet >= 0) {
         wasm_host_tick(33);
     }
 }
 
-static void canvas_event_cb(lv_event_t *event)
-{
+static void canvas_event_cb(lv_event_t *event) {
     lv_event_code_t code = lv_event_get_code(event);
     lv_indev_t *indev = lv_indev_get_act();
     if (indev == NULL) {
@@ -401,8 +388,7 @@ static void canvas_event_cb(lv_event_t *event)
     }
 }
 
-static uint16_t canvas_color(int color565)
-{
+static uint16_t canvas_color(int color565) {
     /* Accept both historical transparent colors (magenta and green) and map
        them to LVGL's actual chroma key, whatever it is configured to. */
     if (color565 == 0xF81F || color565 == 0x07E0) {
@@ -416,8 +402,7 @@ static uint16_t canvas_color(int color565)
     return color.full;
 }
 
-void ui_host_canvas_clear(int color565)
-{
+void ui_host_canvas_clear(int color565) {
     if (s_canvas_buf == NULL) {
         return;
     }
@@ -438,8 +423,7 @@ void ui_host_canvas_clear(int color565)
     }
 }
 
-void ui_host_canvas_rect(int x, int y, int w, int h, int color565)
-{
+void ui_host_canvas_rect(int x, int y, int w, int h, int color565) {
     if (s_canvas_buf == NULL || w <= 0 || h <= 0) {
         return;
     }
@@ -468,16 +452,14 @@ void ui_host_canvas_rect(int x, int y, int w, int h, int color565)
     }
 }
 
-static void put_pixel(int x, int y, uint16_t color)
-{
+static void put_pixel(int x, int y, uint16_t color) {
     if (x < 0 || x >= UI_H_RES || y < 0 || y >= UI_V_RES) {
         return;
     }
     ((uint16_t *)s_canvas_buf)[y * UI_H_RES + x] = color;
 }
 
-void ui_host_canvas_line(int x0, int y0, int x1, int y1, int color565)
-{
+void ui_host_canvas_line(int x0, int y0, int x1, int y1, int color565) {
     if (s_canvas_buf == NULL) {
         return;
     }
@@ -512,15 +494,13 @@ void ui_host_canvas_line(int x0, int y0, int x1, int y1, int color565)
     }
 }
 
-void ui_host_canvas_flush(void)
-{
+void ui_host_canvas_flush(void) {
     if (s_canvas != NULL) {
         lv_obj_invalidate(s_canvas);
     }
 }
 
-void ui_host_show_message(const char *text)
-{
+void ui_host_show_message(const char *text) {
     if (s_content == NULL || text == NULL) {
         return;
     }
@@ -535,13 +515,13 @@ void ui_host_show_message(const char *text)
     lv_obj_set_flex_flow(s_content, LV_FLEX_FLOW_COLUMN);
     lv_obj_t *label = lv_label_create(s_content);
     lv_obj_set_width(label, lv_pct(100));
+    lv_obj_set_style_text_font(label, &plex_14, 0);
     lv_label_set_long_mode(label, LV_LABEL_LONG_WRAP);
     lv_label_set_text(label, text);
     lv_obj_set_style_text_color(label, lv_color_hex(COLOR_TEXT), 0);
 }
 
-void ui_host_switch_applet(int applet_id)
-{
+void ui_host_switch_applet(int applet_id) {
     if (applet_id < 0 || applet_id >= APPLET_COUNT || s_content == NULL) {
         return;
     }
@@ -629,12 +609,16 @@ void ui_host_switch_applet(int applet_id)
         render_model();
     }
 
+    if (!canvas) {
+        lv_obj_fade_in(s_panel, 150, 0);
+    }
+
     ESP_LOGI(TAG, "applet %d canvas=%d panel_hidden=%d widgets=%d tab_y=%d", applet_id, canvas,
-             lv_obj_has_flag(s_panel, LV_OBJ_FLAG_HIDDEN), ui_model_count(), UI_V_RES - UI_TAB_BAR_H);
+             lv_obj_has_flag(s_panel, LV_OBJ_FLAG_HIDDEN), ui_model_count(),
+             UI_V_RES - UI_TAB_BAR_H);
 }
 
-esp_err_t ui_host_init(void)
-{
+esp_err_t ui_host_init(void) {
     size_t canvas_bytes = (size_t)UI_H_RES * UI_V_RES * sizeof(uint16_t);
     s_canvas_buf = heap_caps_malloc(canvas_bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     if (s_canvas_buf == NULL) {
@@ -704,8 +688,19 @@ esp_err_t ui_host_init(void)
     lv_obj_set_style_pad_all(s_panel, 8, 0);
     lv_obj_clear_flag(s_panel, LV_OBJ_FLAG_SCROLLABLE);
 
-    s_content = make_plain(s_panel);
+    s_content = lv_obj_create(s_panel);
+    lv_obj_remove_style_all(s_content);
     lv_obj_set_size(s_content, lv_pct(100), lv_pct(100));
+    /* Applets such as FX have more widgets than fit, so the content scrolls;
+       the bar is 10 px wide so a finger can drag it. */
+    lv_obj_add_flag(s_content, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_scroll_dir(s_content, LV_DIR_VER);
+    lv_obj_set_scrollbar_mode(s_content, LV_SCROLLBAR_MODE_AUTO);
+    lv_obj_set_style_width(s_content, 10, LV_PART_SCROLLBAR);
+    lv_obj_set_style_radius(s_content, 5, LV_PART_SCROLLBAR);
+    lv_obj_set_style_bg_color(s_content, lv_color_hex(COLOR_ACCENT), LV_PART_SCROLLBAR);
+    lv_obj_set_style_bg_opa(s_content, 140, LV_PART_SCROLLBAR);
+    lv_obj_set_style_pad_right(s_content, 12, 0);
 
     lv_obj_t *tabbar = make_plain(s_root);
     lv_obj_set_size(tabbar, UI_H_RES, UI_TAB_BAR_H);
@@ -716,7 +711,8 @@ esp_err_t ui_host_init(void)
     lv_obj_set_style_border_width(tabbar, 1, 0);
     lv_obj_set_style_border_color(tabbar, lv_color_hex(COLOR_LINE), 0);
     lv_obj_set_flex_flow(tabbar, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(tabbar, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_flex_align(tabbar, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER,
+                          LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_all(tabbar, 1, 0);
     lv_obj_set_style_pad_column(tabbar, 2, 0);
 
@@ -777,8 +773,8 @@ esp_err_t ui_host_init(void)
 
     lv_mem_monitor_t mon;
     lv_mem_monitor(&mon);
-    ESP_LOGI(TAG, "LVGL mem: %u%% used, %u bytes free, %u%% frag", mon.used_pct, (unsigned)mon.free_size,
-             mon.frag_pct);
+    ESP_LOGI(TAG, "LVGL mem: %u%% used, %u bytes free, %u%% frag", mon.used_pct,
+             (unsigned)mon.free_size, mon.frag_pct);
 
     lvgl_port_unlock();
     ESP_LOGI(TAG, "native UI ready");

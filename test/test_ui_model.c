@@ -4,8 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static void test_add_and_lookup(void)
-{
+static void test_add_and_lookup(void) {
     ui_model_reset();
     assert(ui_model_count() == 0);
 
@@ -26,8 +25,7 @@ static void test_add_and_lookup(void)
     assert(w->type == UI_WIDGET_BUTTON);
 }
 
-static void test_bounds(void)
-{
+static void test_bounds(void) {
     ui_model_reset();
     assert(ui_model_add_slider("S", 5, -5, 99) == 0);
     const ui_widget_t *w = ui_model_get(0);
@@ -37,8 +35,7 @@ static void test_bounds(void)
     assert(ui_model_get(1) == NULL);
 }
 
-static void test_limits(void)
-{
+static void test_limits(void) {
     ui_model_reset();
     assert(ui_model_add_slider(NULL, 0, 1, 0) == -1);
     assert(ui_model_add_button("") == -1);
@@ -57,8 +54,7 @@ static void test_limits(void)
     assert(ui_model_add_button("overflow") == -1);
 }
 
-int main(void)
-{
+int main(void) {
     test_add_and_lookup();
     test_bounds();
     test_limits();

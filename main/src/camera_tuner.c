@@ -42,15 +42,13 @@ static uint32_t s_wb_r, s_wb_g, s_wb_b, s_wb_n;
 static char s_sensor_name[24] = "unknown";
 static bool s_frame_info_logged;
 
-static inline uint8_t clamp_u8(int v)
-{
+static inline uint8_t clamp_u8(int v) {
     return (uint8_t)(v < 0 ? 0 : (v > 255 ? 255 : v));
 }
 
 /* YUYV (Y0 U Y1 V) at VGA -> RGB565 in LVGL lv_color_t representation at QVGA,
    averaging each 2x2 block so the downscale keeps detail instead of aliasing. */
-static void yuv422_to_rgb565(const uint8_t *src, uint16_t *dst)
-{
+static void yuv422_to_rgb565(const uint8_t *src, uint16_t *dst) {
     for (size_t oy = 0; oy < CAM_FRAME_H; oy++) {
         const uint8_t *r0 = src + (oy * 2) * CAM_SENSOR_W * 2;
         const uint8_t *r1 = r0 + CAM_SENSOR_W * 2;
@@ -75,8 +73,7 @@ static void yuv422_to_rgb565(const uint8_t *src, uint16_t *dst)
     }
 }
 
-static void detect_sensor(void)
-{
+static void detect_sensor(void) {
     if (s_sensor == NULL) {
         return;
     }
@@ -102,8 +99,7 @@ static void detect_sensor(void)
     }
 }
 
-static void apply_params(void)
-{
+static void apply_params(void) {
     if (s_sensor == NULL) {
         return;
     }
@@ -118,8 +114,7 @@ static void apply_params(void)
    driven here from the measured luma. The gain step is coarse, hence +-1.
    shortcut: gain-only, so a very bright scene can still clip; add exposure
    control when the sensor AE is fixed. */
-static void camera_software_ae(uint32_t luma)
-{
+static void camera_software_ae(uint32_t luma) {
     static int8_t gain = 20;
     static uint16_t aec = 700;
 
@@ -144,8 +139,7 @@ static void camera_software_ae(uint32_t luma)
     }
 }
 
-static void camera_task(void *arg)
-{
+static void camera_task(void *arg) {
     (void)arg;
 
     for (;;) {
@@ -165,7 +159,6 @@ static void camera_task(void *arg)
                         luma_n++;
                     }
                     camera_software_ae(luma_sum / (luma_n ? luma_n : 1));
-
 
                     yuv422_to_rgb565(fb->buf, (uint16_t *)s_frame);
 
@@ -195,8 +188,7 @@ static void camera_task(void *arg)
     }
 }
 
-esp_err_t camera_tuner_init(void)
-{
+esp_err_t camera_tuner_init(void) {
     s_frame = heap_caps_malloc(CAM_FRAME_BYTES, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     if (s_frame == NULL) {
         ESP_LOGE(TAG, "no PSRAM for the %d-byte preview buffer", CAM_FRAME_BYTES);
@@ -287,16 +279,16 @@ esp_err_t camera_tuner_init(void)
     return ESP_OK;
 }
 
-void camera_tuner_start(void)
-{
+void camera_tuner_start(void) {
     if (!s_ready || s_task_started) {
         return;
     }
 
     static StaticTask_t task_buffer;
     static StackType_t task_stack[CAM_TASK_STACK];
-    TaskHandle_t handle = xTaskCreateStaticPinnedToCore(camera_task, "camera", CAM_TASK_STACK, NULL,
-                                                        CAM_TASK_PRIORITY, task_stack, &task_buffer, CAM_TASK_CORE);
+    TaskHandle_t handle =
+        xTaskCreateStaticPinnedToCore(camera_task, "camera", CAM_TASK_STACK, NULL,
+                                      CAM_TASK_PRIORITY, task_stack, &task_buffer, CAM_TASK_CORE);
     if (handle == NULL) {
         ESP_LOGE(TAG, "camera task creation failed");
         return;
@@ -304,8 +296,7 @@ void camera_tuner_start(void)
     s_task_started = true;
 }
 
-void camera_tuner_set_param(int param_id, int value)
-{
+void camera_tuner_set_param(int param_id, int value) {
     if (!cam_params_set(&s_params, param_id, value)) {
         ESP_LOGW(TAG, "unknown parameter %d", param_id);
         return;
@@ -313,33 +304,27 @@ void camera_tuner_set_param(int param_id, int value)
     apply_params();
 }
 
-void camera_tuner_reset(void)
-{
+void camera_tuner_reset(void) {
     cam_params_reset(&s_params);
     apply_params();
 }
 
-const uint8_t *camera_tuner_frame_buffer(void)
-{
+const uint8_t *camera_tuner_frame_buffer(void) {
     return s_frame;
 }
 
-size_t camera_tuner_frame_size(void)
-{
+size_t camera_tuner_frame_size(void) {
     return CAM_FRAME_BYTES;
 }
 
-uint32_t camera_tuner_frame_id(void)
-{
+uint32_t camera_tuner_frame_id(void) {
     return s_frame_id;
 }
 
-bool camera_tuner_ready(void)
-{
+bool camera_tuner_ready(void) {
     return s_ready;
 }
 
-const char *camera_tuner_sensor_name(void)
-{
+const char *camera_tuner_sensor_name(void) {
     return s_sensor_name;
 }

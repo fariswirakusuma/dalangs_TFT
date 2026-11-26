@@ -49,8 +49,7 @@ static uint8_t *s_wasm_copy;
 static uint32_t s_load_ms;
 static char s_error[128];
 
-static const char *memory_string(IM3Runtime runtime, void *mem, const char *ptr)
-{
+static const char *memory_string(IM3Runtime runtime, void *mem, const char *ptr) {
     uint32_t size = m3_GetMemorySize(runtime);
     uintptr_t base = (uintptr_t)mem;
     uintptr_t p = (uintptr_t)ptr;
@@ -66,8 +65,7 @@ static const char *memory_string(IM3Runtime runtime, void *mem, const char *ptr)
     return (const char *)p;
 }
 
-m3ApiRawFunction(host_log)
-{
+m3ApiRawFunction(host_log) {
     m3ApiGetArgMem(const char *, text);
     m3ApiGetArg(uint32_t, len);
 
@@ -78,10 +76,8 @@ m3ApiRawFunction(host_log)
     m3ApiSuccess();
 }
 
-m3ApiRawFunction(host_ui_slider)
-{
-    m3ApiReturnType(int)
-    m3ApiGetArgMem(const char *, label);
+m3ApiRawFunction(host_ui_slider) {
+    m3ApiReturnType(int) m3ApiGetArgMem(const char *, label);
     m3ApiGetArg(int, min);
     m3ApiGetArg(int, max);
     m3ApiGetArg(int, default_value);
@@ -94,10 +90,8 @@ m3ApiRawFunction(host_ui_slider)
     m3ApiReturn(ui_model_add_slider(safe_label, min, max, default_value));
 }
 
-m3ApiRawFunction(host_ui_button)
-{
-    m3ApiReturnType(int)
-    m3ApiGetArgMem(const char *, label);
+m3ApiRawFunction(host_ui_button) {
+    m3ApiReturnType(int) m3ApiGetArgMem(const char *, label);
 
     const char *safe_label = memory_string(runtime, _mem, label);
     if (safe_label == NULL) {
@@ -107,29 +101,25 @@ m3ApiRawFunction(host_ui_button)
     m3ApiReturn(ui_model_add_button(safe_label));
 }
 
-m3ApiRawFunction(host_set_cam_param)
-{
+m3ApiRawFunction(host_set_cam_param) {
     m3ApiGetArg(int, param_id);
     m3ApiGetArg(int, value);
     camera_tuner_set_param(param_id, value);
     m3ApiSuccess();
 }
 
-m3ApiRawFunction(host_reset_camera)
-{
+m3ApiRawFunction(host_reset_camera) {
     camera_tuner_reset();
     m3ApiSuccess();
 }
 
-m3ApiRawFunction(host_canvas_clear)
-{
+m3ApiRawFunction(host_canvas_clear) {
     m3ApiGetArg(int, color);
     ui_host_canvas_clear(color);
     m3ApiSuccess();
 }
 
-m3ApiRawFunction(host_canvas_rect)
-{
+m3ApiRawFunction(host_canvas_rect) {
     m3ApiGetArg(int, x);
     m3ApiGetArg(int, y);
     m3ApiGetArg(int, w);
@@ -139,8 +129,7 @@ m3ApiRawFunction(host_canvas_rect)
     m3ApiSuccess();
 }
 
-m3ApiRawFunction(host_canvas_line)
-{
+m3ApiRawFunction(host_canvas_line) {
     m3ApiGetArg(int, x0);
     m3ApiGetArg(int, y0);
     m3ApiGetArg(int, x1);
@@ -150,14 +139,13 @@ m3ApiRawFunction(host_canvas_line)
     m3ApiSuccess();
 }
 
-m3ApiRawFunction(host_canvas_flush)
-{
+m3ApiRawFunction(host_canvas_flush) {
     ui_host_canvas_flush();
     m3ApiSuccess();
 }
 
-static M3Result link_import(IM3Module module, const char *name, const char *signature, M3RawCall fn)
-{
+static M3Result link_import(IM3Module module, const char *name, const char *signature,
+                            M3RawCall fn) {
     M3Result result = m3_LinkRawFunction(module, "env", name, signature, fn);
     if (result == m3Err_functionLookupFailed) {
         return m3Err_none;
@@ -165,8 +153,7 @@ static M3Result link_import(IM3Module module, const char *name, const char *sign
     return result;
 }
 
-static M3Result link_all(IM3Module module)
-{
+static M3Result link_all(IM3Module module) {
     M3Result result;
     result = link_import(module, "log", "v(ii)", host_log);
     if (result) {
@@ -203,8 +190,7 @@ static M3Result link_all(IM3Module module)
     return link_import(module, "canvas_flush", "v()", host_canvas_flush);
 }
 
-static void unload(void)
-{
+static void unload(void) {
     if (s_runtime != NULL) {
         m3_FreeRuntime(s_runtime);
         s_runtime = NULL;
@@ -220,16 +206,14 @@ static void unload(void)
     }
 }
 
-static esp_err_t fail(const char *message)
-{
+static esp_err_t fail(const char *message) {
     snprintf(s_error, sizeof(s_error), "%s", message != NULL ? message : "unknown error");
     ESP_LOGE(TAG, "%s", s_error);
     unload();
     return ESP_FAIL;
 }
 
-esp_err_t wasm_host_init(void)
-{
+esp_err_t wasm_host_init(void) {
     s_env = m3_NewEnvironment();
     if (s_env == NULL) {
         return fail("m3_NewEnvironment failed");
@@ -238,8 +222,7 @@ esp_err_t wasm_host_init(void)
     return ESP_OK;
 }
 
-esp_err_t wasm_host_load(int applet_id)
-{
+esp_err_t wasm_host_load(int applet_id) {
     if (s_env == NULL) {
         return fail("wasm host not initialized");
     }
@@ -307,12 +290,12 @@ esp_err_t wasm_host_load(int applet_id)
     }
 
     s_load_ms = (uint32_t)((esp_timer_get_time() - start_us) / 1000);
-    ESP_LOGI(TAG, "%s loaded in %u ms, %d widgets", blob->name, (unsigned)s_load_ms, ui_model_count());
+    ESP_LOGI(TAG, "%s loaded in %u ms, %d widgets", blob->name, (unsigned)s_load_ms,
+             ui_model_count());
     return ESP_OK;
 }
 
-void wasm_host_event(int widget_id, int value)
-{
+void wasm_host_event(int widget_id, int value) {
     if (s_app_event == NULL) {
         return;
     }
@@ -322,8 +305,7 @@ void wasm_host_event(int widget_id, int value)
     }
 }
 
-void wasm_host_tick(int elapsed_ms)
-{
+void wasm_host_tick(int elapsed_ms) {
     if (s_app_tick == NULL) {
         return;
     }
@@ -334,8 +316,7 @@ void wasm_host_tick(int elapsed_ms)
     }
 }
 
-void wasm_host_touch(int x, int y, bool pressed)
-{
+void wasm_host_touch(int x, int y, bool pressed) {
     if (s_app_touch == NULL) {
         return;
     }
@@ -345,12 +326,10 @@ void wasm_host_touch(int x, int y, bool pressed)
     }
 }
 
-uint32_t wasm_host_last_load_ms(void)
-{
+uint32_t wasm_host_last_load_ms(void) {
     return s_load_ms;
 }
 
-const char *wasm_host_last_error(void)
-{
+const char *wasm_host_last_error(void) {
     return s_error;
 }

@@ -17,12 +17,17 @@ the entries below are the libraries and assets the UI and runtime depend on.
 
 | Asset | Used for | License |
 | --- | --- | --- |
-| [Montserrat](https://github.com/JulietaUla/Montserrat) | all UI text, shipped with LVGL | SIL OFL 1.1 |
+| [IBM Plex Sans](https://github.com/IBM/plex) | all UI text, converted to bitmap at 14, 16 and 20 px | SIL OFL 1.1 |
+| [Montserrat](https://github.com/JulietaUla/Montserrat) | the symbol font LVGL ships, used for the tab icons | SIL OFL 1.1 |
 | [Font Awesome Free 4.7](https://fontawesome.com/v4/) | the tab bar icons (`LV_SYMBOL_*` glyphs bundled in LVGL's Montserrat fonts) | CC BY 4.0 |
 
 The tab bar does not ship a separate icon file: it renders the `LV_SYMBOL_*`
 glyphs that LVGL already embeds, which come from Font Awesome Free. Credit for
-those glyphs belongs to Font Awesome; the font to Montserrat.
+those glyphs belongs to Font Awesome.
+
+`main/src/fonts/plex_*.c` are generated from IBM Plex Sans Regular with
+[lv_font_conv](https://github.com/lvgl/lv_font_conv) (MIT). The converter runs
+on a workstation only; the firmware ships the generated C.
 
 ## Art
 
