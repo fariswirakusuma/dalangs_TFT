@@ -93,7 +93,8 @@
 
 /* XPT2046 PENIRQ is optional; the driver polls over SPI when this is -1. */
 #define TOUCH_PIN_IRQ (-1)
-#define TOUCH_SPI_CLOCK_HZ (1 * 1000 * 1000)
+/* XPT2046 tolerates 2 MHz; a faster sample rate makes light presses register. */
+#define TOUCH_SPI_CLOCK_HZ (2 * 1000 * 1000)
 
 /* Native 320x240: no axis swap; mirror X follows the panel MX setting. */
 #define TOUCH_SWAP_XY 0
