@@ -7,12 +7,14 @@ description: Design and review LVGL 8.4 screens for the 320x240 landscape TFT in
 
 ## Canvas
 
-- Logical resolution is **320x240 landscape** (ST7789/ILI9341 240x320 rotated).
+- Logical resolution is **320x240 native** (this module is 320x240, no rotation).
+- The panel scan uses **MX mirror**; touch X mirrors to match.
 - The camera preview is a full-screen background image.
 - Native chrome is owned by C, never by wasm:
-  - top status bar: 18 px, system metrics
-  - bottom tab bar: 24 px, applet switch
-  - wasm widget panel: bottom 132 px, rounded, 80% opaque dark surface, hidden for canvas applets
+  - top status bar: 18 px, system metrics + HIDE/SHOW panel toggle
+  - bottom tab bar: 24 px, applet switch, 16 px above the lower edge (resistive dead zone)
+  - wasm widget panel: 120 px, rounded, ~59% opaque dark surface, hidden for canvas applets
+- Canvas applets: LIVE and DRAW. BENCH is a native metrics page.
 
 ## Tokens
 
@@ -37,6 +39,8 @@ Use `lv_color_hex()` and `LV_OPA_*`; do not invent a second palette per applet.
 - Selected tab must be visually distinct (accent background, dark text).
 - Every control must be reachable with one thumb; no double-tap or long-press required.
 - Never block the LVGL task for more than a few milliseconds. Heavy work belongs on another task.
+- Always provide a way to hide the settings panel so the camera preview is not blocked; the status-bar HIDE/SHOW button is the current pattern.
+- BENCH shows used/total SRAM, used/total PSRAM, core temperature, last wasm load time, and uptime.
 
 ## Applet contract
 

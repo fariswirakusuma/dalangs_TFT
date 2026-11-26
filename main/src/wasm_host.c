@@ -22,8 +22,8 @@ extern const uint8_t live_cam_wasm_start[] asm("_binary_live_cam_wasm_start");
 extern const uint8_t live_cam_wasm_end[] asm("_binary_live_cam_wasm_end");
 extern const uint8_t draw_pad_wasm_start[] asm("_binary_draw_pad_wasm_start");
 extern const uint8_t draw_pad_wasm_end[] asm("_binary_draw_pad_wasm_end");
-extern const uint8_t bouncing_ball_wasm_start[] asm("_binary_bouncing_ball_wasm_start");
-extern const uint8_t bouncing_ball_wasm_end[] asm("_binary_bouncing_ball_wasm_end");
+extern const uint8_t bench_wasm_start[] asm("_binary_bench_wasm_start");
+extern const uint8_t bench_wasm_end[] asm("_binary_bench_wasm_end");
 
 typedef struct {
     const char *name;
@@ -36,7 +36,7 @@ static const applet_blob_t s_applets[APPLET_COUNT] = {
     [APPLET_FX] = {"fx_buttons", fx_buttons_wasm_start, fx_buttons_wasm_end},
     [APPLET_LIVE_CAM] = {"live_cam", live_cam_wasm_start, live_cam_wasm_end},
     [APPLET_DRAW_PAD] = {"draw_pad", draw_pad_wasm_start, draw_pad_wasm_end},
-    [APPLET_BOUNCE] = {"bouncing_ball", bouncing_ball_wasm_start, bouncing_ball_wasm_end},
+    [APPLET_BENCH] = {"bench", bench_wasm_start, bench_wasm_end},
 };
 
 static IM3Environment s_env;

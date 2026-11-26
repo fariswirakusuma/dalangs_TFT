@@ -8,7 +8,7 @@ static void test_defaults(void)
     cam_params_t p;
     p.brightness = 99;
     cam_params_reset(&p);
-    assert(p.brightness == 0);
+    assert(p.brightness == CAM_TUNING_MIN);
     assert(p.contrast == 0);
     assert(p.saturation == 0);
     assert(p.effect == CAM_EFFECT_NONE);

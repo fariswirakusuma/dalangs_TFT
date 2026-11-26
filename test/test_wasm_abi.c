@@ -180,11 +180,9 @@ static void run_applet(const char *dir, const char *name)
         assert(m3_CallV(touch, 20, 20, 1) == NULL);
         assert(m3_CallV(touch, 20, 20, 0) == NULL);
         assert(s_state.canvas_calls >= 3);
-    } else if (strcmp(name, "bouncing_ball.wasm") == 0) {
-        IM3Function tick = NULL;
-        assert(m3_FindFunction(&tick, runtime, "app_tick") == NULL);
-        assert(m3_CallV(tick, 33) == NULL);
-        assert(s_state.canvas_calls >= 3);
+    } else if (strcmp(name, "bench.wasm") == 0) {
+        assert(s_state.sliders == 0);
+        assert(s_state.buttons == 0);
     }
 
     m3_FreeRuntime(runtime);
@@ -203,7 +201,7 @@ int main(void)
     run_applet(dir, "fx_buttons.wasm");
     run_applet(dir, "live_cam.wasm");
     run_applet(dir, "draw_pad.wasm");
-    run_applet(dir, "bouncing_ball.wasm");
+    run_applet(dir, "bench.wasm");
 
     puts("test_wasm_abi: ok");
     return 0;

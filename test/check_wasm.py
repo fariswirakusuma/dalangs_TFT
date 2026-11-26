@@ -13,7 +13,7 @@ EXPECTED = {
     "fx_buttons.wasm": {"app_init", "app_event"},
     "live_cam.wasm": {"app_init", "app_tick"},
     "draw_pad.wasm": {"app_init", "app_touch"},
-    "bouncing_ball.wasm": {"app_init", "app_tick"},
+    "bench.wasm": {"app_init"},
 }
 
 ALLOWED_IMPORTS = {

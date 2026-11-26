@@ -6,6 +6,7 @@
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "esp_lvgl_port.h"
+#include "system_monitor.h"
 #include "ui_host.h"
 #include "wasm_host.h"
 
@@ -31,6 +32,7 @@ void app_main(void)
 
     ESP_ERROR_CHECK(ui_host_init());
     ESP_ERROR_CHECK(wasm_host_init());
+    system_monitor_init();
 
 #if CONFIG_DALANGS_WASM_SMOKE_TEST
     if (lvgl_port_lock(0)) {

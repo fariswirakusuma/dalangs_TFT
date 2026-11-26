@@ -23,6 +23,7 @@ idf_component_register(
         esp_lcd_ili9341
         wasm3
         esp_timer
+        esp_driver_tsens
         esp_psram
         heap
     EMBED_FILES
@@ -30,5 +31,5 @@ idf_component_register(
         "wasm/fx_buttons.wasm"
         "wasm/live_cam.wasm"
         "wasm/draw_pad.wasm"
-        "wasm/bouncing_ball.wasm"
+        "wasm/bench.wasm"
 )

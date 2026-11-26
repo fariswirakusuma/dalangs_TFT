@@ -41,7 +41,7 @@ Run these in order after flashing. Record the result in the PR.
 5. **FX**: Normal, Grayscale, Sepia, Negative apply, and Reset restores defaults.
 6. **Live**: camera preview updates; the crosshair and blinking dot are visible.
 7. **Draw**: dragging leaves a continuous line; lifting the finger ends it.
-8. **Ball**: the ball bounces inside the screen and on the green floor.
+8. **Bench**: SRAM/PSRAM usage, core temperature, wasm load time, and uptime update every second.
 9. **Profiler**: SRAM and PSRAM values are plausible; WASM time changes per tab.
 10. **Stress**: switch tabs 20 times. Free SRAM after the last switch should be
     within a few KB of the first switch. Watch for a slow downward trend.
@@ -162,7 +162,7 @@ It is a whole-switch cost, not a steady-state frame cost. Useful comparisons:
 
 - Record free SRAM after boot, then after 20 tab switches.
 - Compare load time across applets of different sizes.
-- Compare a declarative applet (sliders) with a canvas applet (ball).
+- Compare a declarative applet (sliders) with a native applet (bench).
 
-For a README screenshot, use the `BALL` or `SLIDERS` tab so the status bar and
+For a README screenshot, use the `BENCH` or `SLIDERS` tab so the status bar and
 the applet content are both visible.

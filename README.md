@@ -11,7 +11,7 @@ Built with **ESP-IDF v6.1 + CMake + Ninja + LVGL 8.4 + wasm3**.
 | Part | State |
 | --- | --- |
 | #3 Touch-screen camera tuner | Implemented: live preview, three sliders, four effects, reset |
-| #4 Wasm UI switcher and profiler | Implemented: native status bar, five applet tabs, live/draw/ball applets |
+| #4 Wasm UI switcher and profiler | Implemented: native status bar, five applet tabs, live/draw/bench applets |
 | Host tests and firmware build | Passing |
 | On-board validation | Pending; checklist in [docs/TESTING.md](docs/TESTING.md) |
 
@@ -73,7 +73,7 @@ Five tabs run along the bottom of the 320x240 landscape screen.
 | `FX` | `fx_buttons.wasm` | Normal, Grayscale, Sepia, Negative, Reset |
 | `LIVE` | `live_cam.wasm` | Camera view with a wasm-drawn crosshair and recording dot |
 | `DRAW` | `draw_pad.wasm` | Touch drawing pad over the camera |
-| `BALL` | `bouncing_ball.wasm` | Bouncing-ball animation driven by `app_tick` |
+| `BENCH` | native + `bench.wasm` | Live SRAM/PSRAM usage, core temperature, wasm load time, uptime |
 
 The top status bar is native C and shows free internal SRAM, free PSRAM, and the
 last Wasm load time in milliseconds.

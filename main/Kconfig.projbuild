@@ -50,6 +50,13 @@ menu "dalangs_TFT"
             Loads all embedded applets in sequence and logs their load time
             and widget count before opening the normal UI.
 
+    config DALANGS_CAMERA_COLORBAR
+        bool "Camera color bar test"
+        default n
+        help
+            Replaces the camera image with the sensor color bar. Use it to
+            separate a color-format fault from exposure or scene problems.
+
     config DALANGS_CAMERA_ENABLE
         bool "Enable camera preview"
         default y

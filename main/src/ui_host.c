@@ -1,5 +1,6 @@
 #include "ui_host.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -30,7 +31,15 @@ static lv_obj_t *s_status_label;
 static lv_obj_t *s_panel;
 static lv_obj_t *s_content;
 static lv_obj_t *s_tabs[APPLET_COUNT];
+static lv_obj_t *s_panel_toggle;
+static bool s_panel_hidden_by_user;
 static lv_timer_t *s_tick_timer;
+static lv_obj_t *s_bench_sram;
+static lv_obj_t *s_bench_psram;
+static lv_obj_t *s_bench_temp;
+static lv_obj_t *s_bench_cpu;
+static lv_obj_t *s_bench_wasm;
+static lv_obj_t *s_bench_uptime;
 #if CONFIG_DALANGS_TOUCH_DEBUG
 static lv_obj_t *s_touch_marker;
 #endif
@@ -44,12 +53,90 @@ static const char *const s_tab_labels[APPLET_COUNT] = {
     [APPLET_FX] = "FX",
     [APPLET_LIVE_CAM] = "LIVE",
     [APPLET_DRAW_PAD] = "DRAW",
-    [APPLET_BOUNCE] = "BALL",
+    [APPLET_BENCH] = "BENCH",
 };
 
 bool ui_host_applet_uses_canvas(int applet_id)
 {
-    return applet_id >= APPLET_LIVE_CAM && applet_id < APPLET_COUNT;
+    return applet_id == APPLET_LIVE_CAM || applet_id == APPLET_DRAW_PAD;
+}
+
+static lv_obj_t *make_plain(lv_obj_t *parent);
+
+static lv_obj_t *bench_add_row(const char *name, lv_obj_t **value_out)
+{
+    lv_obj_t *row = make_plain(s_content);
+    lv_obj_set_size(row, lv_pct(100), 16);
+    lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(row, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+    lv_obj_t *name_label = lv_label_create(row);
+    lv_label_set_text(name_label, name);
+    lv_obj_set_style_text_font(name_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_color(name_label, lv_color_hex(COLOR_MUTED), 0);
+
+    lv_obj_t *value_label = lv_label_create(row);
+    lv_label_set_text(value_label, "--");
+    lv_obj_set_style_text_font(value_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_color(value_label, lv_color_hex(COLOR_TEXT), 0);
+    *value_out = value_label;
+    return row;
+}
+
+static void update_bench(void)
+{
+    if (s_applet != APPLET_BENCH || s_bench_sram == NULL) {
+        return;
+    }
+
+    system_metrics_t m;
+    system_monitor_read(&m);
+
+    uint32_t sram_used = m.sram_total > m.sram_free ? m.sram_total - m.sram_free : 0;
+    uint32_t psram_used = m.psram_total > m.psram_free ? m.psram_total - m.psram_free : 0;
+
+    lv_label_set_text_fmt(s_bench_sram, "%u / %u KB", (unsigned)(sram_used / 1024),
+                          (unsigned)(m.sram_total / 1024));
+    char buf[40];
+    snprintf(buf, sizeof(buf), "%.1f / %.1f MB", (double)psram_used / (1024.0 * 1024.0),
+             (double)m.psram_total / (1024.0 * 1024.0));
+    lv_label_set_text(s_bench_psram, buf);
+    if (isnan(m.core_temp_c)) {
+        lv_label_set_text(s_bench_temp, "n/a");
+    } else {
+        snprintf(buf, sizeof(buf), "%.1f C", (double)m.core_temp_c);
+        lv_label_set_text(s_bench_temp, buf);
+    }
+    lv_label_set_text_fmt(s_bench_cpu, "%u / %u / %u %%", (unsigned)m.cpu0_pct,
+                          (unsigned)m.cpu1_pct, (unsigned)m.cpu_avg_pct);
+    lv_label_set_text_fmt(s_bench_wasm, "%u ms", (unsigned)m.wasm_load_ms);
+
+    uint32_t up = m.uptime_s;
+    lv_label_set_text_fmt(s_bench_uptime, "%02u:%02u:%02u", (unsigned)(up / 3600),
+                          (unsigned)((up % 3600) / 60), (unsigned)(up % 60));
+}
+
+static void render_bench(void)
+{
+    lv_obj_clean(s_content);
+    s_bench_sram = NULL;
+    s_bench_psram = NULL;
+    s_bench_temp = NULL;
+    s_bench_cpu = NULL;
+    s_bench_wasm = NULL;
+    s_bench_uptime = NULL;
+
+    lv_obj_set_flex_flow(s_content, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(s_content, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+    lv_obj_set_style_pad_row(s_content, 2, 0);
+
+    bench_add_row("SRAM", &s_bench_sram);
+    bench_add_row("PSRAM", &s_bench_psram);
+    bench_add_row("CORE TEMP", &s_bench_temp);
+    bench_add_row("CPU0/1/AVG", &s_bench_cpu);
+    bench_add_row("WASM", &s_bench_wasm);
+    bench_add_row("UPTIME", &s_bench_uptime);
+    update_bench();
 }
 
 static lv_obj_t *make_plain(lv_obj_t *parent)
@@ -72,6 +159,23 @@ static void style_tab(int applet_id, bool selected)
     lv_obj_t *label = lv_obj_get_child(tab, 0);
     if (label != NULL) {
         lv_obj_set_style_text_color(label, lv_color_hex(selected ? COLOR_DARK : COLOR_MUTED), 0);
+    }
+}
+
+static void panel_toggle_cb(lv_event_t *event)
+{
+    (void)event;
+    s_panel_hidden_by_user = !s_panel_hidden_by_user;
+    bool canvas = ui_host_applet_uses_canvas(s_applet);
+    if (canvas || s_panel_hidden_by_user) {
+        lv_obj_add_flag(s_panel, LV_OBJ_FLAG_HIDDEN);
+    } else {
+        lv_obj_clear_flag(s_panel, LV_OBJ_FLAG_HIDDEN);
+    }
+
+    lv_obj_t *label = lv_obj_get_child(s_panel_toggle, 0);
+    if (label != NULL) {
+        lv_label_set_text(label, s_panel_hidden_by_user ? "SHOW" : "HIDE");
     }
 }
 
@@ -215,6 +319,7 @@ static void status_timer_cb(lv_timer_t *timer)
     char text[64];
     system_monitor_format(text, sizeof(text));
     ui_host_set_status(text);
+    update_bench();
 }
 
 static void camera_timer_cb(lv_timer_t *timer)
@@ -279,13 +384,22 @@ static void canvas_event_cb(lv_event_t *event)
     }
 }
 
+static uint16_t canvas_color(int color565)
+{
+    uint8_t r = (uint8_t)((color565 >> 11) & 0x1F);
+    uint8_t g = (uint8_t)((color565 >> 5) & 0x3F);
+    uint8_t b = (uint8_t)(color565 & 0x1F);
+    lv_color_t color = lv_color_make((uint8_t)(r << 3), (uint8_t)(g << 2), (uint8_t)(b << 3));
+    return color.full;
+}
+
 void ui_host_canvas_clear(int color565)
 {
     if (s_canvas_buf == NULL) {
         return;
     }
     uint16_t *pixels = (uint16_t *)s_canvas_buf;
-    uint16_t color = (uint16_t)color565;
+    uint16_t color = canvas_color(color565);
     for (size_t i = 0; i < (size_t)UI_H_RES * UI_V_RES; i++) {
         pixels[i] = color;
     }
@@ -312,7 +426,7 @@ void ui_host_canvas_rect(int x, int y, int w, int h, int color565)
     }
 
     uint16_t *pixels = (uint16_t *)s_canvas_buf;
-    uint16_t color = (uint16_t)color565;
+    uint16_t color = canvas_color(color565);
     for (int row = (int)y0; row < (int)y1; row++) {
         uint16_t *line = &pixels[row * UI_H_RES];
         for (int col = (int)x0; col < (int)x1; col++) {
@@ -346,7 +460,7 @@ void ui_host_canvas_line(int x0, int y0, int x1, int y1, int color565)
     int dy = -(y1 > y0 ? y1 - y0 : y0 - y1);
     int sy = y0 < y1 ? 1 : -1;
     int err = dx + dy;
-    uint16_t color = (uint16_t)color565;
+    uint16_t color = canvas_color(color565);
 
     for (int guard = 0; guard < 2048; guard++) {
         put_pixel(x0, y0, color);
@@ -386,6 +500,12 @@ void ui_host_show_message(const char *text)
     }
     lv_obj_clear_flag(s_panel, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clean(s_content);
+    s_bench_sram = NULL;
+    s_bench_psram = NULL;
+    s_bench_temp = NULL;
+    s_bench_cpu = NULL;
+    s_bench_wasm = NULL;
+    s_bench_uptime = NULL;
     lv_obj_set_flex_flow(s_content, LV_FLEX_FLOW_COLUMN);
     lv_obj_t *label = lv_label_create(s_content);
     lv_obj_set_width(label, lv_pct(100));
@@ -411,17 +531,52 @@ void ui_host_switch_applet(int applet_id)
         if (s_canvas != NULL) {
             lv_obj_clear_flag(s_canvas, LV_OBJ_FLAG_HIDDEN);
         }
-        lv_obj_add_flag(s_panel, LV_OBJ_FLAG_HIDDEN);
         ui_host_canvas_clear(COLOR_CHROMA);
         ui_host_canvas_flush();
     } else {
         if (s_canvas != NULL) {
             lv_obj_add_flag(s_canvas, LV_OBJ_FLAG_HIDDEN);
         }
+    }
+
+    bool hide_panel = canvas || s_panel_hidden_by_user;
+    if (hide_panel) {
+        lv_obj_add_flag(s_panel, LV_OBJ_FLAG_HIDDEN);
+    } else {
         lv_obj_clear_flag(s_panel, LV_OBJ_FLAG_HIDDEN);
+    }
+    if (s_panel_toggle != NULL) {
+        if (canvas) {
+            lv_obj_add_flag(s_panel_toggle, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_clear_flag(s_panel_toggle, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_t *label = lv_obj_get_child(s_panel_toggle, 0);
+            if (label != NULL) {
+                lv_label_set_text(label, s_panel_hidden_by_user ? "SHOW" : "HIDE");
+            }
+        }
     }
 
     lv_obj_clean(s_content);
+    s_bench_sram = NULL;
+    s_bench_psram = NULL;
+    s_bench_temp = NULL;
+    s_bench_cpu = NULL;
+    s_bench_wasm = NULL;
+    s_bench_uptime = NULL;
+
+    if (applet_id == APPLET_BENCH) {
+        esp_err_t err = wasm_host_load(applet_id);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "applet %d failed: %s", applet_id, wasm_host_last_error());
+            ui_host_show_message(wasm_host_last_error());
+            return;
+        }
+        render_bench();
+        ESP_LOGI(TAG, "applet %d canvas=%d panel_hidden=%d tab_y=%d", applet_id, canvas,
+                 lv_obj_has_flag(s_panel, LV_OBJ_FLAG_HIDDEN), UI_V_RES - UI_TAB_BAR_H);
+        return;
+    }
 
     esp_err_t err = wasm_host_load(applet_id);
     if (err != ESP_OK) {
@@ -447,8 +602,9 @@ esp_err_t ui_host_init(void)
                  (unsigned)canvas_bytes);
     } else {
         uint16_t *pixels = (uint16_t *)s_canvas_buf;
+        uint16_t clear = canvas_color(COLOR_CHROMA);
         for (size_t i = 0; i < (size_t)UI_H_RES * UI_V_RES; i++) {
-            pixels[i] = COLOR_CHROMA;
+            pixels[i] = clear;
         }
     }
 
@@ -496,14 +652,18 @@ esp_err_t ui_host_init(void)
 
     s_status_label = lv_label_create(status);
     lv_obj_set_pos(s_status_label, 4, 2);
+    lv_obj_set_width(s_status_label, UI_H_RES - 8);
+    lv_label_set_long_mode(s_status_label, LV_LABEL_LONG_CLIP);
     lv_obj_set_style_text_color(s_status_label, lv_color_hex(COLOR_MUTED), 0);
     lv_label_set_text(s_status_label, "booting...");
+
+
 
     s_panel = lv_obj_create(s_root);
     lv_obj_set_size(s_panel, UI_H_RES - 2 * UI_PANEL_MARGIN, UI_PANEL_H);
     lv_obj_set_pos(s_panel, UI_PANEL_MARGIN, UI_PANEL_Y);
     lv_obj_set_style_bg_color(s_panel, lv_color_hex(COLOR_SURFACE), 0);
-    lv_obj_set_style_bg_opa(s_panel, 190, 0);
+    lv_obj_set_style_bg_opa(s_panel, 235, 0);
     lv_obj_set_style_radius(s_panel, 8, 0);
     lv_obj_set_style_border_width(s_panel, 0, 0);
     lv_obj_set_style_pad_all(s_panel, 6, 0);
@@ -550,7 +710,25 @@ esp_err_t ui_host_init(void)
     lv_timer_create(touch_marker_timer_cb, 50, NULL);
 #endif
 
+    s_panel_toggle = lv_btn_create(s_root);
+    lv_obj_set_size(s_panel_toggle, 56, 24);
+    lv_obj_set_pos(s_panel_toggle, UI_H_RES - 60, 22);
+    lv_obj_set_style_radius(s_panel_toggle, 6, 0);
+    lv_obj_set_style_bg_color(s_panel_toggle, lv_color_hex(COLOR_ACCENT), 0);
+    lv_obj_set_style_bg_opa(s_panel_toggle, LV_OPA_COVER, 0);
+    lv_obj_set_style_shadow_width(s_panel_toggle, 0, 0);
+    lv_obj_set_style_border_width(s_panel_toggle, 0, 0);
+    lv_obj_set_ext_click_area(s_panel_toggle, 8);
+    lv_obj_add_event_cb(s_panel_toggle, panel_toggle_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_t *toggle_label = lv_label_create(s_panel_toggle);
+    lv_label_set_text(toggle_label, "HIDE");
+    lv_obj_set_style_text_font(toggle_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_color(toggle_label, lv_color_hex(COLOR_DARK), 0);
+    lv_obj_center(toggle_label);
+
+    lv_obj_move_foreground(s_panel);
     lv_obj_move_foreground(tabbar);
+    lv_obj_move_foreground(s_panel_toggle);
     s_tick_timer = lv_timer_create(tick_timer_cb, 33, NULL);
     lv_timer_create(camera_timer_cb, 100, NULL);
     lv_timer_create(status_timer_cb, 1000, NULL);

@@ -26,6 +26,7 @@ static bool s_task_started;
 static uint8_t *s_frame;
 static uint32_t s_frame_id;
 static char s_sensor_name[24] = "unknown";
+static bool s_frame_info_logged;
 
 static void detect_sensor(void)
 {
@@ -73,6 +74,11 @@ static void camera_task(void *arg)
     for (;;) {
         camera_fb_t *fb = esp_camera_fb_get();
         if (fb != NULL) {
+            if (!s_frame_info_logged) {
+                ESP_LOGI(TAG, "first frame: format=%d %ux%u len=%u", (int)fb->format, fb->width,
+                         fb->height, (unsigned)fb->len);
+                s_frame_info_logged = true;
+            }
             if (fb->format == PIXFORMAT_RGB565 && fb->width == CAM_FRAME_W && fb->height == CAM_FRAME_H &&
                 fb->len <= CAM_FRAME_BYTES && s_frame != NULL) {
                 memcpy(s_frame, fb->buf, fb->len);
@@ -146,8 +152,25 @@ esp_err_t camera_tuner_init(void)
     s_sensor->set_vflip(s_sensor, 0);
     s_sensor->set_hmirror(s_sensor, 0);
     s_sensor->set_whitebal(s_sensor, 1);
+    s_sensor->set_awb_gain(s_sensor, 1);
+    s_sensor->set_wb_mode(s_sensor, 0);
     s_sensor->set_gain_ctrl(s_sensor, 1);
     s_sensor->set_exposure_ctrl(s_sensor, 1);
+    s_sensor->set_aec2(s_sensor, 0);
+    s_sensor->set_ae_level(s_sensor, -2);
+    s_sensor->set_gainceiling(s_sensor, GAINCEILING_2X);
+    if (s_sensor->set_denoise) {
+        s_sensor->set_denoise(s_sensor, 1);
+    }
+    s_sensor->set_bpc(s_sensor, 1);
+    s_sensor->set_wpc(s_sensor, 1);
+    s_sensor->set_raw_gma(s_sensor, 1);
+    s_sensor->set_lenc(s_sensor, 1);
+#if CONFIG_DALANGS_CAMERA_COLORBAR
+    s_sensor->set_colorbar(s_sensor, 1);
+#else
+    s_sensor->set_colorbar(s_sensor, 0);
+#endif
     apply_params();
 
     s_ready = true;

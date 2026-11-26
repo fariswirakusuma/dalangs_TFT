@@ -11,7 +11,7 @@ typedef enum {
     APPLET_FX,
     APPLET_LIVE_CAM,
     APPLET_DRAW_PAD,
-    APPLET_BOUNCE,
+    APPLET_BENCH,
     APPLET_COUNT
 } applet_id_t;
 

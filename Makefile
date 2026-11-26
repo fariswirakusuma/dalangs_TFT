@@ -5,7 +5,7 @@ PORT ?= /dev/ttyACM0
 BAUD ?= 460800
 IDF := . "$(IDF_PATH)/export.sh" >/dev/null 2>&1 && idf.py
 
-.PHONY: help setup build wasm test lint-ui lcd-ili9341 lcd-st7789 lcd-mode0 lcd-mode3 lcd-selftest lcd-selftest-off camera-on camera-off touch-debug touch-debug-off wasm-smoke wasm-smoke-off flash monitor flash-monitor erase clean distclean menuconfig size doctor
+.PHONY: help setup build wasm test lint-ui lcd-ili9341 lcd-st7789 lcd-mode0 lcd-mode3 lcd-selftest lcd-selftest-off camera-on camera-off camera-colorbar camera-colorbar-off touch-debug touch-debug-off wasm-smoke wasm-smoke-off flash monitor flash-monitor erase clean distclean menuconfig size doctor
 
 help:
 	@echo "dalangs_TFT controller"
@@ -22,6 +22,7 @@ help:
 	@echo "  make lcd-selftest  loop full-screen colors at boot"
 	@echo "  make camera-off    test UI without camera preview"
 	@echo "  make camera-on     restore camera preview"
+	@echo "  make camera-colorbar test the sensor color bars"
 	@echo "  make touch-debug   log raw/mapped touch coordinates"
 	@echo "  make wasm-smoke    load all wasm applets once at boot"
 	@echo "  make flash         flash over PORT=$(PORT)"
@@ -87,6 +88,16 @@ camera-on:
 	@test -f sdkconfig || { echo "Run make setup first."; exit 1; }
 	@sed -i 's/^# CONFIG_DALANGS_CAMERA_ENABLE is not set/CONFIG_DALANGS_CAMERA_ENABLE=y/' sdkconfig
 	@echo "Camera preview enabled. Run: make build flash monitor"
+
+camera-colorbar:
+	@test -f sdkconfig || { echo "Run make setup first."; exit 1; }
+	@sed -i 's/^# CONFIG_DALANGS_CAMERA_COLORBAR is not set/CONFIG_DALANGS_CAMERA_COLORBAR=y/' sdkconfig
+	@echo "Camera color bar enabled. Run: make camera-on build flash monitor"
+
+camera-colorbar-off:
+	@test -f sdkconfig || { echo "Run make setup first."; exit 1; }
+	@sed -i 's/^CONFIG_DALANGS_CAMERA_COLORBAR=y/# CONFIG_DALANGS_CAMERA_COLORBAR is not set/' sdkconfig
+	@echo "Camera color bar disabled."
 
 touch-debug:
 	@test -f sdkconfig || { echo "Run make setup first."; exit 1; }
