@@ -37,6 +37,7 @@ static lv_obj_t *s_panel;
 static lv_obj_t *s_content;
 static lv_obj_t *s_tabs[APPLET_COUNT];
 static lv_obj_t *s_panel_toggle;
+static lv_obj_t *s_cpu_label;
 static bool s_panel_hidden_by_user;
 static lv_timer_t *s_tick_timer;
 static lv_obj_t *s_bench_sram;
@@ -76,12 +77,12 @@ static lv_obj_t *bench_add_row(const char *name, lv_obj_t **value_out) {
 
     lv_obj_t *name_label = lv_label_create(row);
     lv_label_set_text(name_label, name);
-    lv_obj_set_style_text_font(name_label, &plex_14, 0);
+    lv_obj_set_style_text_font(name_label, &roboto_14, 0);
     lv_obj_set_style_text_color(name_label, lv_color_hex(COLOR_MUTED), 0);
 
     lv_obj_t *value_label = lv_label_create(row);
     lv_label_set_text(value_label, "--");
-    lv_obj_set_style_text_font(value_label, &plex_sb_16, 0);
+    lv_obj_set_style_text_font(value_label, &roboto_md_16, 0);
     lv_obj_set_style_text_color(value_label, lv_color_hex(COLOR_TEXT), 0);
     *value_out = value_label;
     return row;
@@ -214,8 +215,27 @@ static void slider_event_cb(lv_event_t *event) {
     wasm_host_event(widget_id, value);
 }
 
+/* Keeps exactly one button in the checked style so the applet shows which mode
+   it is in (the FX presets, for example). */
+static void set_active_button(lv_obj_t *clicked) {
+    if (s_content == NULL) {
+        return;
+    }
+    uint32_t count = lv_obj_get_child_cnt(s_content);
+    for (uint32_t i = 0; i < count; i++) {
+        lv_obj_t *child = lv_obj_get_child(s_content, i);
+        if (child == clicked) {
+            lv_obj_add_state(child, LV_STATE_CHECKED);
+        } else {
+            lv_obj_clear_state(child, LV_STATE_CHECKED);
+        }
+    }
+}
+
 static void button_event_cb(lv_event_t *event) {
-    int widget_id = (int)(intptr_t)lv_obj_get_user_data(lv_event_get_target(event));
+    lv_obj_t *button = lv_event_get_target(event);
+    int widget_id = (int)(intptr_t)lv_obj_get_user_data(button);
+    set_active_button(button);
     wasm_host_event(widget_id, 1);
 }
 
@@ -228,7 +248,7 @@ static void add_slider_row(const ui_widget_t *widget, int widget_id) {
 
     lv_obj_t *name = lv_label_create(row);
     lv_obj_set_width(name, 88);
-    lv_obj_set_style_text_font(name, &plex_16, 0);
+    lv_obj_set_style_text_font(name, &roboto_16, 0);
     lv_obj_set_style_text_color(name, lv_color_hex(COLOR_TEXT), 0);
     lv_label_set_text(name, widget->label);
 
@@ -248,7 +268,7 @@ static void add_slider_row(const ui_widget_t *widget, int widget_id) {
 
     lv_obj_t *value = lv_label_create(row);
     lv_obj_set_width(value, 34);
-    lv_obj_set_style_text_font(value, &plex_sb_16, 0);
+    lv_obj_set_style_text_font(value, &roboto_md_16, 0);
     lv_obj_set_style_text_align(value, LV_TEXT_ALIGN_RIGHT, 0);
     lv_obj_set_style_text_color(value, lv_color_hex(COLOR_ACCENT), 0);
     lv_label_set_text_fmt(value, "%d", widget->default_value);
@@ -264,15 +284,19 @@ static void add_button(const ui_widget_t *widget, int widget_id, lv_coord_t widt
     lv_obj_set_style_border_width(button, 1, 0);
     lv_obj_set_style_border_color(button, lv_color_hex(0x334155), 0);
     lv_obj_set_style_shadow_width(button, 0, 0);
+    lv_obj_set_style_text_color(button, lv_color_hex(COLOR_TEXT), 0);
     lv_obj_set_style_bg_color(button, lv_color_hex(COLOR_ACCENT), LV_STATE_PRESSED);
     lv_obj_set_style_text_color(button, lv_color_hex(COLOR_DARK), LV_STATE_PRESSED);
     lv_obj_set_style_border_color(button, lv_color_hex(COLOR_ACCENT), LV_STATE_PRESSED);
+    /* Checked = the mode this applet is currently in. */
+    lv_obj_set_style_bg_color(button, lv_color_hex(COLOR_ACCENT), LV_STATE_CHECKED);
+    lv_obj_set_style_border_color(button, lv_color_hex(COLOR_ACCENT), LV_STATE_CHECKED);
+    lv_obj_set_style_text_color(button, lv_color_hex(COLOR_DARK), LV_STATE_CHECKED);
     lv_obj_set_user_data(button, (void *)(intptr_t)widget_id);
     lv_obj_add_event_cb(button, button_event_cb, LV_EVENT_CLICKED, NULL);
 
     lv_obj_t *label = lv_label_create(button);
-    lv_obj_set_style_text_color(label, lv_color_hex(COLOR_TEXT), 0);
-    lv_obj_set_style_text_font(label, &plex_sb_16, 0);
+    lv_obj_set_style_text_font(label, &roboto_md_16, 0);
     lv_label_set_text(label, widget->label);
     lv_obj_center(label);
 }
@@ -312,14 +336,21 @@ static void render_model(void) {
             first_font = lv_obj_get_style_text_font(inner, 0);
         }
     }
-    ESP_LOGI(TAG, "layout: n=%d box=%dx%d scroll=%d..%d plex16=%d", count,
+    ESP_LOGI(TAG, "layout: n=%d box=%dx%d scroll=%d..%d font_ok=%d", count,
              (int)lv_obj_get_content_width(s_content), (int)lv_obj_get_content_height(s_content),
              (int)lv_obj_get_scroll_top(s_content), (int)lv_obj_get_scroll_bottom(s_content),
-             first_font == &plex_16);
+             first_font == &roboto_16);
 }
 
 static void status_timer_cb(lv_timer_t *timer) {
     (void)timer;
+
+    if (s_cpu_label != NULL) {
+        system_metrics_t m;
+        system_monitor_read(&m);
+        lv_label_set_text_fmt(s_cpu_label, "CPU %u%%", (unsigned)m.cpu_avg_pct);
+    }
+
     update_bench();
 }
 
@@ -508,7 +539,7 @@ void ui_host_show_message(const char *text) {
     lv_obj_set_flex_flow(s_content, LV_FLEX_FLOW_COLUMN);
     lv_obj_t *label = lv_label_create(s_content);
     lv_obj_set_width(label, lv_pct(100));
-    lv_obj_set_style_text_font(label, &plex_14, 0);
+    lv_obj_set_style_text_font(label, &roboto_14, 0);
     lv_label_set_long_mode(label, LV_LABEL_LONG_WRAP);
     lv_label_set_text(label, text);
     lv_obj_set_style_text_color(label, lv_color_hex(COLOR_TEXT), 0);
@@ -759,6 +790,23 @@ esp_err_t ui_host_init(void) {
     lv_obj_move_foreground(s_panel);
     lv_obj_move_foreground(tabbar);
     lv_obj_move_foreground(s_panel_toggle);
+    /* A small readout in the corner: the one number worth watching live. */
+    lv_obj_t *cpu_badge = lv_obj_create(s_root);
+    lv_obj_remove_style_all(cpu_badge);
+    lv_obj_set_size(cpu_badge, 64, 18);
+    lv_obj_align(cpu_badge, LV_ALIGN_TOP_RIGHT, -4, 4);
+    lv_obj_set_style_bg_color(cpu_badge, lv_color_hex(COLOR_BG), 0);
+    lv_obj_set_style_bg_opa(cpu_badge, 220, 0);
+    lv_obj_set_style_radius(cpu_badge, 6, 0);
+    lv_obj_set_style_border_width(cpu_badge, 1, 0);
+    lv_obj_set_style_border_color(cpu_badge, lv_color_hex(COLOR_LINE), 0);
+
+    s_cpu_label = lv_label_create(cpu_badge);
+    lv_label_set_text(s_cpu_label, "CPU --%");
+    lv_obj_set_style_text_font(s_cpu_label, &roboto_14, 0);
+    lv_obj_set_style_text_color(s_cpu_label, lv_color_hex(COLOR_MUTED), 0);
+    lv_obj_center(s_cpu_label);
+
     s_tick_timer = lv_timer_create(tick_timer_cb, 33, NULL);
     lv_timer_create(camera_timer_cb, 100, NULL);
     lv_timer_create(status_timer_cb, 1000, NULL);

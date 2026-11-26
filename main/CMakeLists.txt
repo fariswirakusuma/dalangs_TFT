@@ -9,10 +9,9 @@ idf_component_register(
         "src/ui_model.c"
         "src/ui_host.c"
         "src/wasm_host.c"
-        "src/fonts/plex_14.c"
-        "src/fonts/plex_16.c"
-        "src/fonts/plex_20.c"
-        "src/fonts/plex_sb_16.c"
+        "src/fonts/roboto_14.c"
+        "src/fonts/roboto_16.c"
+        "src/fonts/roboto_md_16.c"
     INCLUDE_DIRS
         "include"
         "src"

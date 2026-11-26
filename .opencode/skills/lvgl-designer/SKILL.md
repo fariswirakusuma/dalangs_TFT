@@ -15,6 +15,7 @@ description: Design and review LVGL 8.4 screens for the 320x240 landscape TFT in
   - bottom tab bar: 24 px icon-only tabs using `LV_SYMBOL_*`, 16 px above the lower edge (resistive dead zone)
   - wasm widget panel: 132 px, rounded, scrollable with a 10 px finger-size scrollbar, hidden for canvas applets
   - HIDE/SHOW sits under the top edge and is the shortest path back to a full-screen preview
+  - a 64x18 CPU badge in the top right corner, refreshed once a second
 - Canvas applets: LIVE and DRAW. BENCH is a native metrics page.
 
 ## Tokens
@@ -25,7 +26,7 @@ description: Design and review LVGL 8.4 screens for the 320x240 landscape TFT in
 | Surface | `#101827` at 88% opacity |
 | Text primary | `#FFFFFF` |
 | Text muted | `#CBD5E1` |
-| Font | IBM Plex Sans 14/16/20 (`main/src/fonts`), Montserrat only for symbols |
+| Font | Roboto 14/16 and Medium 16 (`main/src/fonts`), Montserrat only for symbols |
 | Accent | `#38BDF8` |
 | Success | `#22C55E` |
 | Danger | `#EF4444` |
@@ -39,6 +40,8 @@ Use `lv_color_hex()` and `LV_OPA_*`; do not invent a second palette per applet.
 - Minimum touch target: 32x32 px. Prefer 38 px height for buttons.
 - Sliders need a visible value label next to the track.
 - Selected tab must be visually distinct (accent background, dark text).
+- A button applet marks the mode it is in with `LV_STATE_CHECKED` (accent fill,
+  dark label); exactly one button carries it at a time.
 - Every control must be reachable with one thumb; no double-tap or long-press required.
 - Never block the LVGL task for more than a few milliseconds. Heavy work belongs on another task.
 - Always provide a way to hide the settings panel so the camera preview is not

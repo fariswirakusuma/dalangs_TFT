@@ -17,7 +17,7 @@ the entries below are the libraries and assets the UI and runtime depend on.
 
 | Asset | Used for | License |
 | --- | --- | --- |
-| [IBM Plex Sans](https://github.com/IBM/plex) | all UI text: Regular 14/16/20 and SemiBold 16 | SIL OFL 1.1 |
+| [Roboto](https://github.com/googlefonts/roboto) | all UI text: Regular 14/16 and Medium 16 | Apache-2.0 |
 | [Montserrat](https://github.com/JulietaUla/Montserrat) | the symbol font LVGL ships, used for the tab icons | SIL OFL 1.1 |
 | [Font Awesome Free 4.7](https://fontawesome.com/v4/) | the tab bar icons (`LV_SYMBOL_*` glyphs bundled in LVGL's Montserrat fonts) | CC BY 4.0 |
 
@@ -25,8 +25,7 @@ The tab bar does not ship a separate icon file: it renders the `LV_SYMBOL_*`
 glyphs that LVGL already embeds, which come from Font Awesome Free. Credit for
 those glyphs belongs to Font Awesome.
 
-`main/src/fonts/plex_*.c` are generated from IBM Plex Sans (Regular and
-SemiBold) with
+`main/src/fonts/roboto_*.c` are generated from Roboto (Regular and Medium) with
 [lv_font_conv](https://github.com/lvgl/lv_font_conv) (MIT). The converter runs
 on a workstation only; the firmware ships the generated C.
 
