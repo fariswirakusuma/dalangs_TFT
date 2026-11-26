@@ -16,7 +16,10 @@ jobs:
     name: Host unit tests
     runs-on: ubuntu-latest
     steps:
+      # test_wasm_abi builds third_party/wasm3 from source.
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - name: Run tests
         run: ./test/run.sh
 

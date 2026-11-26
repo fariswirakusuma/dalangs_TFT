@@ -27,6 +27,10 @@ run_test test_ui_model \
 
 echo "==> test_wasm_abi"
 WASM3_DIR="$ROOT/third_party/wasm3/source"
+if [ ! -f "$WASM3_DIR/m3_core.c" ]; then
+    echo "third_party/wasm3 is empty: run 'git submodule update --init --recursive'" >&2
+    exit 1
+fi
 WASM3_SRCS=(
     "$WASM3_DIR/m3_bind.c"
     "$WASM3_DIR/m3_code.c"
