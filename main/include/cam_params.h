@@ -29,6 +29,9 @@ typedef struct {
     int effect;
 } cam_params_t;
 
+/* Four ints, no padding. */
+_Static_assert(sizeof(cam_params_t) == 16, "cam_params_t layout changed");
+
 void cam_params_reset(cam_params_t *params);
 
 /* Clamp a value for a known parameter. Returns the clamped value. */

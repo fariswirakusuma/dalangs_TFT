@@ -91,8 +91,8 @@ status bar. It includes parse, instantiation, linking, and `app_init`.
 
 | Item | Location | Size |
 | --- | --- | --- |
-| Camera driver frame buffers (2x) | PSRAM | ~300 KB |
-| Persistent preview frame | PSRAM | 150 KB |
+| Camera driver frame buffers (2x, VGA) | PSRAM | 1.2 MB |
+| Persistent preview frame (QVGA) | PSRAM | 150 KB |
 | Canvas (RGB565) | PSRAM | 150 KB |
 | Wasm module copy | PSRAM preferred | < 1 KB |
 | Wasm linear memory | internal heap | 64 KB per runtime |
@@ -103,6 +103,33 @@ The wasm runtime is freed on every applet switch, so only one linear memory is
 alive at a time. If internal SRAM becomes tight, reduce the wasm initial memory
 in `scripts/build_wasm.sh` (it must stay page-aligned, so 64 KB is the practical
 minimum).
+
+## Audits and asserts
+
+Boot prints one line per invariant, and the ones that cannot be recovered from
+assert instead of warning:
+
+| Check | Where | Why |
+| --- | --- | --- |
+| Pin audit: no duplicate GPIO, none from the reserved list (USB, UART, PSRAM) | `main.c`, before the display claims its bus | two drivers on one pin silently break both |
+| `LCD_PIN_CS != TOUCH_PIN_CS`, SCCB lines not on SPI lines | `_Static_assert` in `pins.h` | the LCD and touch share SPI2; the camera SCCB must stay off it |
+| Canvas and camera frame are 1:1 | `_Static_assert` in `ui_host.c` | the canvas copies the frame straight in |
+| VGA sensor is exactly 2x the output | `_Static_assert` in `camera_tuner.c` | the 2x2 downscale indexes by halves |
+| Struct layouts (`cam_params_t`, `ui_widget_t`, `system_metrics_t`) | `_Static_assert` in the headers | padding creep shows up at compile time, not as a silent memory cost |
+| Applet id in range | `assert` in `ui_host_switch_applet` | the tab tables are indexed by id |
+| Preview and sensor handles non-NULL | `assert` at the camera task entry | the task only starts after a successful init |
+| Heap integrity, free and largest block, per minute | audit + leak watch | a flat pair of numbers is the leak test |
+
+`system_metrics_t` is the only struct with padding: 28 bytes of fields on 4-byte
+types leaves one tail byte. Packing it would turn 32-bit accesses unaligned,
+which traps on Xtensa, so the byte stays and the size is asserted instead.
+
+Shared state has a single writer: camera frames and the WB/AE state belong to
+the camera task, widgets, parameters and the canvas belong to the LVGL task, and
+nothing is written from both sides. The one deliberate exception is the preview
+buffer: the camera task writes it while LVGL composites it, so a frame can tear
+mid-flush. That is cosmetic and costs nothing to hold; double buffering it is the
+fix if it ever becomes visible.
 
 ## Failure handling
 

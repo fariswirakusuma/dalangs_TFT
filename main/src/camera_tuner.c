@@ -21,6 +21,10 @@ static const char *TAG = "CAMERA";
    softer than a 2x2 box average of a VGA frame. */
 #define CAM_SENSOR_W 640
 #define CAM_SENSOR_H 480
+
+_Static_assert(CAM_FRAME_BYTES == CAM_FRAME_W * CAM_FRAME_H * 2, "frame buffer size mismatch");
+_Static_assert(CAM_SENSOR_W == 2 * CAM_FRAME_W && CAM_SENSOR_H == 2 * CAM_FRAME_H,
+               "the 2x2 downscale needs exactly twice the output size");
 #define CAM_PERIOD_MS 50
 
 static sensor_t *s_sensor;
@@ -137,6 +141,7 @@ static void camera_software_ae(uint32_t luma) {
 
 void camera_tuner_task(void *arg) {
     (void)arg;
+    assert(s_frame != NULL && s_sensor != NULL);
 
     for (;;) {
         camera_fb_t *fb = esp_camera_fb_get();

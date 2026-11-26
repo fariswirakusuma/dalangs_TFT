@@ -18,6 +18,9 @@ typedef struct {
     int default_value;
 } ui_widget_t;
 
+/* 4 + 24 + 12 bytes, no padding between members. */
+_Static_assert(sizeof(ui_widget_t) == 40, "ui_widget_t layout changed");
+
 void ui_model_reset(void);
 
 /* Returns the widget ID, or -1 when the model is full or the label is invalid. */

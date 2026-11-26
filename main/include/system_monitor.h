@@ -16,6 +16,10 @@ typedef struct {
     uint8_t cpu_avg_pct;
 } system_metrics_t;
 
+/* 28 bytes of data on 4-byte fields: one byte of tail padding is the floor.
+   Packing would give unaligned 32-bit loads, which trap on Xtensa. */
+_Static_assert(sizeof(system_metrics_t) == 32, "system_metrics_t layout changed");
+
 void system_monitor_init(void);
 void system_monitor_read(system_metrics_t *out);
 

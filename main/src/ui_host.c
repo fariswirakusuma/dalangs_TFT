@@ -17,6 +17,10 @@
 
 static const char *TAG = "UI";
 
+/* The canvas copies the camera frame straight in, so both must be 1:1. */
+_Static_assert(UI_H_RES == CAM_FRAME_W && UI_V_RES == CAM_FRAME_H,
+               "canvas and camera frame must match pixel for pixel");
+
 #define COLOR_BG 0x05080F
 #define COLOR_SURFACE 0x101827
 #define COLOR_TEXT 0xFFFFFF
@@ -361,6 +365,17 @@ static void render_model(void) {
 static void status_timer_cb(lv_timer_t *timer) {
     (void)timer;
 
+#if CONFIG_DALANGS_FIRMWARE_AUDIT
+    /* A flat pair of numbers minute after minute is the cheapest leak test:
+       anything that allocates per frame shows up here. */
+    static uint32_t s_audit_tick;
+    if (++s_audit_tick % 60 == 0) {
+        ESP_LOGI(TAG, "leak watch: internal %u KB free, PSRAM %u KB free",
+                 (unsigned)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),
+                 (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024));
+    }
+#endif
+
     if (s_cpu_label != NULL) {
         system_metrics_t m;
         system_monitor_read(&m);
@@ -562,6 +577,7 @@ void ui_host_show_message(const char *text) {
 }
 
 void ui_host_switch_applet(int applet_id) {
+    assert(applet_id >= 0 && applet_id < APPLET_COUNT);
     if (applet_id < 0 || applet_id >= APPLET_COUNT || s_content == NULL) {
         return;
     }

@@ -29,6 +29,10 @@
  * LCD SCK/MOSI, T_DO goes to LCD_PIN_MISO, and T_CS is separate.
  */
 
+/* Pins the module itself needs: native USB, the UART console and the octal
+   PSRAM. Wiring anything here is a fault, so main.c asserts against it. */
+#define BOARD_RESERVED_PINS {19, 20, 33, 34, 35, 36, 37, 43, 44}
+
 /* =========================================================================
  * Display (SPI2 / FSPI)
  * ========================================================================= */
@@ -150,3 +154,9 @@
  * GPIO 45/46 : strapping
  * GPIO 0/3   : strapping
  */
+
+/* Shared-bus sanity: two chip selects on one bus must differ, and the camera
+   SCCB lines must not land on the SPI pins. */
+_Static_assert(LCD_PIN_CS != TOUCH_PIN_CS, "LCD and touch need separate chip selects");
+_Static_assert(LCD_PIN_SCK != CAM_PIN_SIOC, "camera SCCB clock collides with LCD SCK");
+_Static_assert(LCD_PIN_MOSI != CAM_PIN_SIOD, "camera SCCB data collides with LCD MOSI");

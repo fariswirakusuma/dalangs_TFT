@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include "app_config.h"
 #include "board_display.h"
 #include "board_touch.h"
@@ -41,11 +43,66 @@ static void start_camera_task(void) {
 }
 
 #if CONFIG_DALANGS_FIRMWARE_AUDIT
+/*
+ * Wiring audit: every GPIO the firmware drives, in one table. A duplicate is a
+ * configuration bug that silently breaks two devices, and a reserved pin means
+ * the module itself would be disturbed, so both assert instead of warning.
+ */
+typedef struct {
+    const char *name;
+    int pin;
+} pin_ref_t;
+
+static const pin_ref_t s_pin_map[] = {
+    {"LCD_SCK", LCD_PIN_SCK},     {"LCD_MOSI", LCD_PIN_MOSI}, {"LCD_MISO", LCD_PIN_MISO},
+    {"LCD_CS", LCD_PIN_CS},       {"LCD_DC", LCD_PIN_DC},     {"LCD_RST", LCD_PIN_RST},
+    {"LCD_BCKL", LCD_PIN_BCKL},   {"TOUCH_CS", TOUCH_PIN_CS}, {"TOUCH_IRQ", TOUCH_PIN_IRQ},
+    {"CAM_XCLK", CAM_PIN_XCLK},   {"CAM_SIOD", CAM_PIN_SIOD}, {"CAM_SIOC", CAM_PIN_SIOC},
+    {"CAM_VSYNC", CAM_PIN_VSYNC}, {"CAM_HREF", CAM_PIN_HREF}, {"CAM_PCLK", CAM_PIN_PCLK},
+    {"CAM_D0", CAM_PIN_D0},       {"CAM_D1", CAM_PIN_D1},     {"CAM_D2", CAM_PIN_D2},
+    {"CAM_D3", CAM_PIN_D3},       {"CAM_D4", CAM_PIN_D4},     {"CAM_D5", CAM_PIN_D5},
+    {"CAM_D6", CAM_PIN_D6},       {"CAM_D7", CAM_PIN_D7},
+};
+
+static void pin_audit(void) {
+    static const int reserved[] = BOARD_RESERVED_PINS;
+    size_t count = sizeof(s_pin_map) / sizeof(s_pin_map[0]);
+    int used = 0;
+
+    for (size_t i = 0; i < count; i++) {
+        int pin = s_pin_map[i].pin;
+        if (pin < 0) {
+            continue;
+        }
+        used++;
+
+        for (size_t r = 0; r < sizeof(reserved) / sizeof(reserved[0]); r++) {
+            if (pin == reserved[r]) {
+                ESP_LOGE(TAG, "pin audit: %s uses GPIO %d, reserved by the module",
+                         s_pin_map[i].name, pin);
+                assert(false);
+            }
+        }
+        for (size_t j = i + 1; j < count; j++) {
+            if (s_pin_map[j].pin == pin) {
+                ESP_LOGE(TAG, "pin audit: %s and %s share GPIO %d", s_pin_map[i].name,
+                         s_pin_map[j].name, pin);
+                assert(false);
+            }
+        }
+    }
+    ESP_LOGI(TAG, "pin audit: %d GPIO in use, no conflicts", used);
+}
+
 static void firmware_audit(void) {
     ESP_LOGI(TAG, "heap integrity: %s", heap_caps_check_integrity_all(true) ? "OK" : "CORRUPT");
-    ESP_LOGI(TAG, "heap: %u KB internal free, %u KB PSRAM free",
+    ESP_LOGI(TAG,
+             "heap: internal %u KB free (largest block %u KB), PSRAM %u KB free "
+             "(largest block %u KB)",
              (unsigned)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),
-             (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024));
+             (unsigned)(heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL) / 1024),
+             (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024),
+             (unsigned)(heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM) / 1024));
 
     TaskStatus_t tasks[48];
     UBaseType_t count = uxTaskGetSystemState(tasks, 48, NULL);
@@ -70,6 +127,8 @@ static void firmware_audit(void) {
 
 void app_main(void) {
     ESP_LOGI(TAG, "%s %s starting", APP_NAME, APP_VERSION);
+
+    pin_audit();
 
     ESP_ERROR_CHECK(board_display_init());
     ESP_ERROR_CHECK(board_touch_init(board_display_handle()));
