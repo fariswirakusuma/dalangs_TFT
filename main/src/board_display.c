@@ -13,6 +13,10 @@
 #include "freertos/task.h"
 #include "pins.h"
 
+#ifndef CONFIG_DALANGS_LCD_INVERT_COLOR
+#define CONFIG_DALANGS_LCD_INVERT_COLOR 0
+#endif
+
 #if CONFIG_DALANGS_LCD_ILI9341
 #include "esp_lcd_ili9341.h"
 #endif
@@ -173,7 +177,7 @@ esp_err_t board_display_init(void)
 #endif
 
     lvgl_port_cfg_t port_cfg = ESP_LVGL_PORT_INIT_CONFIG();
-    port_cfg.task_stack = 12288;
+    port_cfg.task_stack = 16384;
     port_cfg.task_priority = 4;
     port_cfg.task_affinity = 0;
     port_cfg.task_max_sleep_ms = 20;

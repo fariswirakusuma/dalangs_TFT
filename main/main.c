@@ -5,12 +5,44 @@
 #include "esp_err.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
+#include "driver/gpio.h"
 #include "esp_lvgl_port.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "system_monitor.h"
 #include "ui_host.h"
 #include "wasm_host.h"
 
 static const char *TAG = "MAIN";
+
+#if CONFIG_DALANGS_FIRMWARE_AUDIT
+static void firmware_audit(void)
+{
+    ESP_LOGI(TAG, "heap integrity: %s", heap_caps_check_integrity_all(true) ? "OK" : "CORRUPT");
+    ESP_LOGI(TAG, "heap: %u KB internal free, %u KB PSRAM free",
+             (unsigned)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),
+             (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024));
+
+    TaskStatus_t tasks[48];
+    UBaseType_t count = uxTaskGetSystemState(tasks, 48, NULL);
+    for (UBaseType_t i = 0; i < count; i++) {
+        if (tasks[i].pcTaskName != NULL) {
+            ESP_LOGI(TAG, "task %-14s core=%d prio=%u stack_hi=%u", tasks[i].pcTaskName,
+                     (int)tasks[i].xCoreID, (unsigned)tasks[i].uxCurrentPriority,
+                     (unsigned)tasks[i].usStackHighWaterMark);
+        }
+    }
+
+#if LCD_PIN_BCKL >= 0
+    ESP_LOGI(TAG, "pins: LCD CS=%d DC=%d RST=%d BL=%d", gpio_get_level(LCD_PIN_CS),
+             gpio_get_level(LCD_PIN_DC), gpio_get_level(LCD_PIN_RST), gpio_get_level(LCD_PIN_BCKL));
+#else
+    ESP_LOGI(TAG, "pins: LCD CS=%d DC=%d RST=%d", gpio_get_level(LCD_PIN_CS),
+             gpio_get_level(LCD_PIN_DC), gpio_get_level(LCD_PIN_RST));
+#endif
+    ESP_LOGI(TAG, "pins: TOUCH CS=%d", gpio_get_level(TOUCH_PIN_CS));
+}
+#endif
 
 void app_main(void)
 {
@@ -57,7 +89,12 @@ void app_main(void)
 #endif
     lvgl_port_unlock();
 
-#if CONFIG_DALANGS_CAMERA_ENABLE
+#if CONFIG_DALANGS_IMAGE_TEST
+    if (lvgl_port_lock(0)) {
+        ui_host_camera_test_pattern();
+        lvgl_port_unlock();
+    }
+#elif CONFIG_DALANGS_CAMERA_ENABLE
     if (camera_err == ESP_OK) {
         camera_tuner_start();
     }
@@ -66,4 +103,8 @@ void app_main(void)
     ESP_LOGI(TAG, "ready: %s, %u KB SRAM free, %u KB PSRAM free", camera_tuner_sensor_name(),
              (unsigned)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),
              (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024));
+
+#if CONFIG_DALANGS_FIRMWARE_AUDIT
+    firmware_audit();
+#endif
 }

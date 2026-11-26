@@ -5,7 +5,7 @@ void cam_params_reset(cam_params_t *params)
     if (params == NULL) {
         return;
     }
-    params->brightness = CAM_TUNING_MIN;
+    params->brightness = 0;
     params->contrast = 0;
     params->saturation = 0;
     params->effect = CAM_EFFECT_NONE;

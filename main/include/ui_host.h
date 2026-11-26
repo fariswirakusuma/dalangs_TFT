@@ -16,6 +16,9 @@ void ui_host_switch_applet(int applet_id);
 /* Updates the native status bar text (top of the screen). */
 void ui_host_set_status(const char *text);
 
+/* Fill the camera image buffer with color bars without starting the camera. */
+void ui_host_camera_test_pattern(void);
+
 /* Shows a short native error in the widget panel. */
 void ui_host_show_message(const char *text);
 

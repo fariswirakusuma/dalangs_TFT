@@ -22,7 +22,7 @@ static const char *TAG = "UI";
 #define COLOR_MUTED 0x94A3B8
 #define COLOR_ACCENT 0x38BDF8
 #define COLOR_DARK 0x0B1220
-#define COLOR_CHROMA 0xF81F
+#define COLOR_CHROMA 0x07E0
 
 static lv_obj_t *s_root;
 static lv_obj_t *s_camera_img;
@@ -332,9 +332,9 @@ static void camera_timer_cb(lv_timer_t *timer)
     uint32_t frame_id = camera_tuner_frame_id();
     if (frame_id != s_last_frame_id) {
         s_last_frame_id = frame_id;
-        /* shortcut: the camera task writes the same buffer LVGL reads; tearing is
-           possible under load. Upgrade to a double buffer if it becomes visible. */
-        lv_obj_invalidate(s_camera_img);
+        /* The descriptor points at a mutable PSRAM buffer; re-setting the source
+           forces LVGL to reopen and repaint it with the new data. */
+        lv_img_set_src(s_camera_img, &s_camera_desc);
     }
 }
 
@@ -386,6 +386,12 @@ static void canvas_event_cb(lv_event_t *event)
 
 static uint16_t canvas_color(int color565)
 {
+    /* Accept both historical transparent colors (magenta and green) and map
+       them to LVGL's actual chroma key, whatever it is configured to. */
+    if (color565 == 0xF81F || color565 == 0x07E0) {
+        return lv_color_chroma_key().full;
+    }
+
     uint8_t r = (uint8_t)((color565 >> 11) & 0x1F);
     uint8_t g = (uint8_t)((color565 >> 5) & 0x3F);
     uint8_t b = (uint8_t)(color565 & 0x1F);
@@ -398,8 +404,18 @@ void ui_host_canvas_clear(int color565)
     if (s_canvas_buf == NULL) {
         return;
     }
+
+    /* Applets use the chroma color to mean "show what is behind me"; composite the
+       live camera frame there so the canvas itself is the camera layer. */
+    const uint8_t *frame = camera_tuner_frame_buffer();
+    if (color565 == COLOR_CHROMA && frame != NULL) {
+        memcpy(s_canvas_buf, frame, (size_t)UI_H_RES * UI_V_RES * 2);
+        return;
+    }
+
     uint16_t *pixels = (uint16_t *)s_canvas_buf;
-    uint16_t color = canvas_color(color565);
+    /* 0x08A4 is COLOR_BG expressed as RGB565, used when there is no camera. */
+    uint16_t color = canvas_color(color565 == COLOR_CHROMA ? 0x08A4 : color565);
     for (size_t i = 0; i < (size_t)UI_H_RES * UI_V_RES; i++) {
         pixels[i] = color;
     }
@@ -486,6 +502,33 @@ void ui_host_canvas_flush(void)
     }
 }
 
+void ui_host_camera_test_pattern(void)
+{
+    uint8_t *frame = (uint8_t *)camera_tuner_frame_buffer();
+    if (frame == NULL || s_camera_img == NULL) {
+        return;
+    }
+
+    uint16_t *pixels = (uint16_t *)frame;
+    for (int y = 0; y < UI_V_RES; y++) {
+        for (int x = 0; x < UI_H_RES; x++) {
+            int bar = (x * 4) / UI_H_RES;
+            lv_color_t color;
+            switch (bar) {
+            case 0: color = lv_color_make(255, 0, 0); break;
+            case 1: color = lv_color_make(0, 255, 0); break;
+            case 2: color = lv_color_make(0, 0, 255); break;
+            default: color = lv_color_make(255, 255, 255); break;
+            }
+            pixels[y * UI_H_RES + x] = color.full;
+        }
+    }
+    ESP_LOGI(TAG, "image test: %dx%d bars written, first px=0x%04X", UI_H_RES, UI_V_RES,
+             ((uint16_t *)frame)[0]);
+    lv_img_cache_invalidate_src(&s_camera_desc);
+    lv_obj_invalidate(s_camera_img);
+}
+
 void ui_host_set_status(const char *text)
 {
     if (s_status_label != NULL && text != NULL) {
@@ -527,6 +570,13 @@ void ui_host_switch_applet(int applet_id)
     }
 
     bool canvas = ui_host_applet_uses_canvas(applet_id);
+    if (s_camera_img != NULL) {
+        if (canvas) {
+            lv_obj_add_flag(s_camera_img, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_clear_flag(s_camera_img, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
     if (canvas) {
         if (s_canvas != NULL) {
             lv_obj_clear_flag(s_canvas, LV_OBJ_FLAG_HIDDEN);
@@ -634,7 +684,7 @@ esp_err_t ui_host_init(void)
 
     if (s_canvas_buf != NULL) {
         s_canvas = lv_canvas_create(s_root);
-        lv_canvas_set_buffer(s_canvas, s_canvas_buf, UI_H_RES, UI_V_RES, LV_IMG_CF_TRUE_COLOR_CHROMA_KEYED);
+        lv_canvas_set_buffer(s_canvas, s_canvas_buf, UI_H_RES, UI_V_RES, LV_IMG_CF_TRUE_COLOR);
         lv_obj_set_pos(s_canvas, 0, 0);
         lv_obj_add_flag(s_canvas, LV_OBJ_FLAG_CLICKABLE);
         lv_obj_clear_flag(s_canvas, LV_OBJ_FLAG_SCROLLABLE);

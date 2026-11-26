@@ -9,7 +9,7 @@ extern void canvas_line(int x0, int y0, int x1, int y1, int color565);
 IMPORT(canvas_flush)
 extern void canvas_flush(void);
 
-#define TRANSPARENT 0xF81F
+#define TRANSPARENT 0x07E0
 #define WHITE 0xFFFF
 #define CYAN 0x07FF
 

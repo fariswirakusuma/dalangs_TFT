@@ -5,8 +5,10 @@
 
 #include "cam_params.h"
 #include "esp_camera.h"
+#include "lvgl.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "pins.h"
@@ -27,6 +29,35 @@ static uint8_t *s_frame;
 static uint32_t s_frame_id;
 static char s_sensor_name[24] = "unknown";
 static bool s_frame_info_logged;
+
+static inline uint8_t clamp_u8(int v)
+{
+    return (uint8_t)(v < 0 ? 0 : (v > 255 ? 255 : v));
+}
+
+/* YUYV (Y0 U Y1 V) -> RGB565 in LVGL lv_color_t representation. */
+static void yuv422_to_rgb565(const uint8_t *src, uint16_t *dst, size_t pixels)
+{
+    for (size_t i = 0; i + 1 < pixels; i += 2) {
+        int y0 = src[0];
+        int u = src[1] - 128;
+        int y1 = src[2];
+        int v = src[3] - 128;
+        src += 4;
+
+        int c0 = y0 - 16;
+        int c1 = y1 - 16;
+        int r = clamp_u8((298 * c0 + 409 * v + 128) >> 8);
+        int g = clamp_u8((298 * c0 - 100 * u - 208 * v + 128) >> 8);
+        int b = clamp_u8((298 * c0 + 516 * u + 128) >> 8);
+        dst[i] = lv_color_make((uint8_t)r, (uint8_t)g, (uint8_t)b).full;
+
+        r = clamp_u8((298 * c1 + 409 * v + 128) >> 8);
+        g = clamp_u8((298 * c1 - 100 * u - 208 * v + 128) >> 8);
+        b = clamp_u8((298 * c1 + 516 * u + 128) >> 8);
+        dst[i + 1] = lv_color_make((uint8_t)r, (uint8_t)g, (uint8_t)b).full;
+    }
+}
 
 static void detect_sensor(void)
 {
@@ -67,6 +98,25 @@ static void apply_params(void)
     s_sensor->set_special_effect(s_sensor, s_params.effect);
 }
 
+/* The OV5640 does not apply its own auto exposure in this build, so the gain is
+   driven here from the measured luma. The gain step is coarse, hence +-1.
+   shortcut: gain-only, so a very bright scene can still clip; add exposure
+   control when the sensor AE is fixed. */
+static void camera_software_ae(uint32_t luma)
+{
+    static int8_t gain = 24;
+    int8_t next = gain;
+    if (luma < 80 && gain < 30) {
+        next = (int8_t)(gain + 1);
+    } else if (luma > 150 && gain > 0) {
+        next = (int8_t)(gain - 1);
+    }
+    if (next != gain) {
+        gain = next;
+        s_sensor->set_agc_gain(s_sensor, gain);
+    }
+}
+
 static void camera_task(void *arg)
 {
     (void)arg;
@@ -79,16 +129,62 @@ static void camera_task(void *arg)
                          fb->height, (unsigned)fb->len);
                 s_frame_info_logged = true;
             }
-            if (fb->format == PIXFORMAT_RGB565 && fb->width == CAM_FRAME_W && fb->height == CAM_FRAME_H &&
-                fb->len <= CAM_FRAME_BYTES && s_frame != NULL) {
-                memcpy(s_frame, fb->buf, fb->len);
-#if CAMERA_BYTE_SWAP
-                uint16_t *pixels = (uint16_t *)s_frame;
-                for (size_t i = 0; i < fb->len / 2; i++) {
-                    pixels[i] = (uint16_t)((pixels[i] >> 8) | (pixels[i] << 8));
+#if CONFIG_DALANGS_CAMERA_STATS
+            static int64_t s_last_stats_us;
+            int64_t now_us = esp_timer_get_time();
+            if (now_us - s_last_stats_us > 2000000) {
+                s_last_stats_us = now_us;
+                uint32_t min_v = 0xFFFF;
+                uint32_t max_v = 0;
+                uint32_t sum_r = 0, sum_g = 0, sum_b = 0;
+                uint32_t colorful = 0;
+                uint32_t n = 0;
+                uint16_t *px = (uint16_t *)s_frame;
+                for (size_t i = 0; i < CAM_FRAME_W * CAM_FRAME_H; i += 97) {
+                    uint16_t v = px[i];
+                    uint16_t rgb = (uint16_t)((v >> 8) | (v << 8));
+                    uint8_t r = (uint8_t)(((rgb >> 11) & 0x1F) << 3);
+                    uint8_t g = (uint8_t)(((rgb >> 5) & 0x3F) << 2);
+                    uint8_t b = (uint8_t)((rgb & 0x1F) << 3);
+                    if (rgb < min_v) min_v = rgb;
+                    if (rgb > max_v) max_v = rgb;
+                    uint8_t hi = r > g ? (r > b ? r : b) : (g > b ? g : b);
+                    uint8_t lo = r < g ? (r < b ? r : b) : (g < b ? g : b);
+                    if (hi - lo > 16) colorful++;
+                    sum_r += r;
+                    sum_g += g;
+                    sum_b += b;
+                    n++;
                 }
+                n = n ? n : 1;
+                ESP_LOGI(TAG, "frame R=%u G=%u B=%u min=0x%04X max=0x%04X colorful=%u/%u aec=%u gain=%u",
+                         (unsigned)(sum_r / n), (unsigned)(sum_g / n), (unsigned)(sum_b / n),
+                         (unsigned)min_v, (unsigned)max_v, (unsigned)colorful, (unsigned)n,
+                         (unsigned)s_sensor->status.aec_value, (unsigned)s_sensor->status.agc_gain);
+            }
 #endif
-                s_frame_id++;
+            if (s_frame != NULL && fb->width == CAM_FRAME_W && fb->height == CAM_FRAME_H) {
+                if (fb->format == PIXFORMAT_YUV422 && fb->len >= CAM_FRAME_W * CAM_FRAME_H * 2) {
+                    uint32_t luma_sum = 0;
+                    uint32_t luma_n = 0;
+                    for (size_t i = 0; i < CAM_FRAME_W * CAM_FRAME_H; i += 64) {
+                        luma_sum += fb->buf[i * 2];
+                        luma_n++;
+                    }
+                    camera_software_ae(luma_sum / (luma_n ? luma_n : 1));
+
+                    yuv422_to_rgb565(fb->buf, (uint16_t *)s_frame, CAM_FRAME_W * CAM_FRAME_H);
+                    s_frame_id++;
+                } else if (fb->format == PIXFORMAT_RGB565 && fb->len <= CAM_FRAME_BYTES) {
+                    memcpy(s_frame, fb->buf, fb->len);
+#if CAMERA_BYTE_SWAP
+                    uint16_t *pixels = (uint16_t *)s_frame;
+                    for (size_t i = 0; i < fb->len / 2; i++) {
+                        pixels[i] = (uint16_t)((pixels[i] >> 8) | (pixels[i] << 8));
+                    }
+#endif
+                    s_frame_id++;
+                }
             }
             esp_camera_fb_return(fb);
         }
@@ -125,7 +221,7 @@ esp_err_t camera_tuner_init(void)
         .xclk_freq_hz = CAM_XCLK_HZ,
         .ledc_timer = LEDC_TIMER_0,
         .ledc_channel = LEDC_CHANNEL_0,
-        .pixel_format = PIXFORMAT_RGB565,
+        .pixel_format = PIXFORMAT_YUV422,
         .frame_size = FRAMESIZE_QVGA,
         .jpeg_quality = 12,
         .fb_count = 2,
@@ -157,21 +253,19 @@ esp_err_t camera_tuner_init(void)
     s_sensor->set_gain_ctrl(s_sensor, 1);
     s_sensor->set_exposure_ctrl(s_sensor, 1);
     s_sensor->set_aec2(s_sensor, 0);
-    s_sensor->set_ae_level(s_sensor, -2);
-    s_sensor->set_gainceiling(s_sensor, GAINCEILING_2X);
-    if (s_sensor->set_denoise) {
-        s_sensor->set_denoise(s_sensor, 1);
-    }
-    s_sensor->set_bpc(s_sensor, 1);
-    s_sensor->set_wpc(s_sensor, 1);
-    s_sensor->set_raw_gma(s_sensor, 1);
-    s_sensor->set_lenc(s_sensor, 1);
+    s_sensor->set_ae_level(s_sensor, 2);
+    s_sensor->set_gainceiling(s_sensor, GAINCEILING_128X);
 #if CONFIG_DALANGS_CAMERA_COLORBAR
     s_sensor->set_colorbar(s_sensor, 1);
 #else
     s_sensor->set_colorbar(s_sensor, 0);
 #endif
     apply_params();
+
+    s_sensor->set_exposure_ctrl(s_sensor, 0);
+    s_sensor->set_gain_ctrl(s_sensor, 0);
+    s_sensor->set_aec_value(s_sensor, 1000);
+    s_sensor->set_agc_gain(s_sensor, 24);
 
     s_ready = true;
     ESP_LOGI(TAG, "%s ready at %dx%d RGB565", s_sensor_name, CAM_FRAME_W, CAM_FRAME_H);
