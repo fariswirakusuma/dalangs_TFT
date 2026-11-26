@@ -61,7 +61,9 @@
 #define UI_V_RES LCD_V_RES
 #endif
 
-#define LCD_PIXEL_CLOCK_HZ (5 * 1000 * 1000)
+/* 40 MHz keeps a full 320x240 frame under 30 ms; at 5 MHz the panel could only
+   refresh ~4 times per second and the whole UI looked smeared while redrawing. */
+#define LCD_PIXEL_CLOCK_HZ (40 * 1000 * 1000)
 #define LCD_CMD_BITS 8
 #define LCD_PARAM_BITS 8
 
