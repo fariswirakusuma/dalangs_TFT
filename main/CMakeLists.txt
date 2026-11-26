@@ -12,6 +12,7 @@ idf_component_register(
         "src/fonts/plex_14.c"
         "src/fonts/plex_16.c"
         "src/fonts/plex_20.c"
+        "src/fonts/plex_sb_16.c"
     INCLUDE_DIRS
         "include"
         "src"

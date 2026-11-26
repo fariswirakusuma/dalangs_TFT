@@ -8,3 +8,4 @@
 extern const lv_font_t plex_14;
 extern const lv_font_t plex_16;
 extern const lv_font_t plex_20;
+extern const lv_font_t plex_sb_16;

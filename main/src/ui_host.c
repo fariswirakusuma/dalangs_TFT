@@ -81,7 +81,7 @@ static lv_obj_t *bench_add_row(const char *name, lv_obj_t **value_out) {
 
     lv_obj_t *value_label = lv_label_create(row);
     lv_label_set_text(value_label, "--");
-    lv_obj_set_style_text_font(value_label, &plex_14, 0);
+    lv_obj_set_style_text_font(value_label, &plex_sb_16, 0);
     lv_obj_set_style_text_color(value_label, lv_color_hex(COLOR_TEXT), 0);
     *value_out = value_label;
     return row;
@@ -248,7 +248,7 @@ static void add_slider_row(const ui_widget_t *widget, int widget_id) {
 
     lv_obj_t *value = lv_label_create(row);
     lv_obj_set_width(value, 34);
-    lv_obj_set_style_text_font(value, &plex_16, 0);
+    lv_obj_set_style_text_font(value, &plex_sb_16, 0);
     lv_obj_set_style_text_align(value, LV_TEXT_ALIGN_RIGHT, 0);
     lv_obj_set_style_text_color(value, lv_color_hex(COLOR_ACCENT), 0);
     lv_label_set_text_fmt(value, "%d", widget->default_value);
@@ -272,7 +272,7 @@ static void add_button(const ui_widget_t *widget, int widget_id, lv_coord_t widt
 
     lv_obj_t *label = lv_label_create(button);
     lv_obj_set_style_text_color(label, lv_color_hex(COLOR_TEXT), 0);
-    lv_obj_set_style_text_font(label, &plex_16, 0);
+    lv_obj_set_style_text_font(label, &plex_sb_16, 0);
     lv_label_set_text(label, widget->label);
     lv_obj_center(label);
 }
@@ -288,29 +288,6 @@ static void render_model(void) {
         return;
     }
 
-    bool all_buttons = true;
-    for (int i = 0; i < count; i++) {
-        const ui_widget_t *widget = ui_model_get(i);
-        if (widget == NULL || widget->type != UI_WIDGET_BUTTON) {
-            all_buttons = false;
-            break;
-        }
-    }
-
-    if (all_buttons) {
-        lv_obj_set_flex_flow(s_content, LV_FLEX_FLOW_ROW_WRAP);
-        lv_obj_set_flex_align(s_content, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER,
-                              LV_FLEX_ALIGN_CENTER);
-        lv_obj_set_style_pad_row(s_content, 4, 0);
-
-        for (int i = 0; i < count; i++) {
-            const ui_widget_t *widget = ui_model_get(i);
-            bool is_reset = strcmp(widget->label, "Reset") == 0;
-            add_button(widget, i, is_reset ? 300 : 148, is_reset ? 24 : 34);
-        }
-        return;
-    }
-
     lv_obj_set_flex_flow(s_content, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(s_content, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
     lv_obj_set_style_pad_row(s_content, 2, 0);
@@ -323,6 +300,22 @@ static void render_model(void) {
             add_button(widget, i, lv_pct(100), 38);
         }
     }
+
+    /* Rebuilding keeps the old scroll offset, which opened FX halfway down. */
+    lv_obj_scroll_to(s_content, 0, 0, LV_ANIM_OFF);
+
+    lv_obj_t *first = lv_obj_get_child(s_content, 0);
+    const lv_font_t *first_font = NULL;
+    if (first != NULL) {
+        lv_obj_t *inner = lv_obj_get_child(first, 0);
+        if (inner != NULL) {
+            first_font = lv_obj_get_style_text_font(inner, 0);
+        }
+    }
+    ESP_LOGI(TAG, "layout: n=%d box=%dx%d scroll=%d..%d plex16=%d", count,
+             (int)lv_obj_get_content_width(s_content), (int)lv_obj_get_content_height(s_content),
+             (int)lv_obj_get_scroll_top(s_content), (int)lv_obj_get_scroll_bottom(s_content),
+             first_font == &plex_16);
 }
 
 static void status_timer_cb(lv_timer_t *timer) {
