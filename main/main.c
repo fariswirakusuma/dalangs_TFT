@@ -89,12 +89,7 @@ void app_main(void)
 #endif
     lvgl_port_unlock();
 
-#if CONFIG_DALANGS_IMAGE_TEST
-    if (lvgl_port_lock(0)) {
-        ui_host_camera_test_pattern();
-        lvgl_port_unlock();
-    }
-#elif CONFIG_DALANGS_CAMERA_ENABLE
+#if CONFIG_DALANGS_CAMERA_ENABLE
     if (camera_err == ESP_OK) {
         camera_tuner_start();
     }

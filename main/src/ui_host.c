@@ -502,33 +502,6 @@ void ui_host_canvas_flush(void)
     }
 }
 
-void ui_host_camera_test_pattern(void)
-{
-    uint8_t *frame = (uint8_t *)camera_tuner_frame_buffer();
-    if (frame == NULL || s_camera_img == NULL) {
-        return;
-    }
-
-    uint16_t *pixels = (uint16_t *)frame;
-    for (int y = 0; y < UI_V_RES; y++) {
-        for (int x = 0; x < UI_H_RES; x++) {
-            int bar = (x * 4) / UI_H_RES;
-            lv_color_t color;
-            switch (bar) {
-            case 0: color = lv_color_make(255, 0, 0); break;
-            case 1: color = lv_color_make(0, 255, 0); break;
-            case 2: color = lv_color_make(0, 0, 255); break;
-            default: color = lv_color_make(255, 255, 255); break;
-            }
-            pixels[y * UI_H_RES + x] = color.full;
-        }
-    }
-    ESP_LOGI(TAG, "image test: %dx%d bars written, first px=0x%04X", UI_H_RES, UI_V_RES,
-             ((uint16_t *)frame)[0]);
-    lv_img_cache_invalidate_src(&s_camera_desc);
-    lv_obj_invalidate(s_camera_img);
-}
-
 void ui_host_set_status(const char *text)
 {
     if (s_status_label != NULL && text != NULL) {

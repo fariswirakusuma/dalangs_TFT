@@ -50,22 +50,7 @@ menu "dalangs_TFT"
             Loads all embedded applets in sequence and logs their load time
             and widget count before opening the normal UI.
 
-    config DALANGS_IMAGE_TEST
-        bool "Replace camera preview with an LVGL color-bar test image"
-        default n
-        help
-            Bypasses the camera and fills the LVGL image buffer with color bars.
-            If the bars appear, the LVGL/display path works and the camera data
-            is the problem. If the screen stays white, the image/display path
-            is the problem.
 
-    config DALANGS_CAMERA_STATS
-        bool "Log camera frame RGB statistics"
-        default n
-        help
-            Samples the RGB565 frame and logs average/min/max luminance once
-            every 2 seconds. Use it to tell a white sensor image from a display
-            path problem.
 
     config DALANGS_CAMERA_COLORBAR
         bool "Camera color bar test"

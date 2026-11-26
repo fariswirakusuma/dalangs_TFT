@@ -149,6 +149,10 @@ black and the tuner still responds.
 If the image is mirrored or upside down, change the `set_vflip` / `set_hmirror`
 calls in `camera_tuner.c`. They are orientation settings, not wiring faults.
 
-If the preview has red and blue swapped while the native UI colors are correct,
-set `CAMERA_BYTE_SWAP` to `1` in `pins.h` and rebuild. Some OV5640 modules output
-the opposite RGB565 byte order.
+The preview is captured at VGA and averaged down to 320x240 in `camera_tuner.c`,
+because the sensor's own QVGA scaler is noticeably soft.
+
+The OV5640 on this board never applies its own auto exposure and its auto white
+balance does not converge, so both are closed in software: the gain follows the
+measured luma, and the red and blue channels are scaled until they match green.
+There is no sensor preset to tune; correct the loops instead.

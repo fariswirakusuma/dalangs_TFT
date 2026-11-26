@@ -32,7 +32,13 @@ static bool s_ready;
 static bool s_task_started;
 static uint8_t *s_frame;
 static uint32_t s_frame_id;
-static uint32_t s_sharpness;
+
+/* The sensor's own white balance never converges and its presets cannot go far
+   enough, so the red and blue channels are scaled here until they match green.
+   256 is unity gain. */
+static uint16_t s_r_gain = 256;
+static uint16_t s_b_gain = 256;
+static uint32_t s_wb_r, s_wb_g, s_wb_b, s_wb_n;
 static char s_sensor_name[24] = "unknown";
 static bool s_frame_info_logged;
 
@@ -57,9 +63,13 @@ static void yuv422_to_rgb565(const uint8_t *src, uint16_t *dst)
             int v = ((r0[bx + 3] + r1[bx + 3]) >> 1) - 128;
 
             int c = y - 16;
-            uint8_t r = clamp_u8((298 * c + 409 * v + 128) >> 8);
+            uint8_t r = clamp_u8(((298 * c + 409 * v + 128) >> 8) * s_r_gain / 256);
             uint8_t g = clamp_u8((298 * c - 100 * u - 208 * v + 128) >> 8);
-            uint8_t b = clamp_u8((298 * c + 516 * u + 128) >> 8);
+            uint8_t b = clamp_u8(((298 * c + 516 * u + 128) >> 8) * s_b_gain / 256);
+            s_wb_r += r;
+            s_wb_g += g;
+            s_wb_b += b;
+            s_wb_n++;
             out[ox] = lv_color_make(r, g, b).full;
         }
     }
@@ -110,16 +120,27 @@ static void apply_params(void)
    control when the sensor AE is fixed. */
 static void camera_software_ae(uint32_t luma)
 {
-    static int8_t gain = 24;
-    int8_t next = gain;
-    if (luma < 60 && gain < 30) {
-        next = (int8_t)(gain + 1);
-    } else if (luma > 140 && gain > 0) {
-        next = (int8_t)(gain - 1);
-    }
-    if (next != gain) {
-        gain = next;
-        s_sensor->set_agc_gain(s_sensor, gain);
+    static int8_t gain = 20;
+    static uint16_t aec = 700;
+
+    if (luma < 60) {
+        /* Prefer gain in the dark; it reaches further than the exposure line count. */
+        if (gain < 30) {
+            gain++;
+            s_sensor->set_agc_gain(s_sensor, gain);
+        } else if (aec < 1100) {
+            aec = (uint16_t)(aec + 100);
+            s_sensor->set_aec_value(s_sensor, aec);
+        }
+    } else if (luma > 140) {
+        /* Prefer a shorter exposure in bright light; less exposure means less noise. */
+        if (aec > 100) {
+            aec = (uint16_t)(aec - 100);
+            s_sensor->set_aec_value(s_sensor, aec);
+        } else if (gain > 0) {
+            gain--;
+            s_sensor->set_agc_gain(s_sensor, gain);
+        }
     }
 }
 
@@ -135,41 +156,6 @@ static void camera_task(void *arg)
                          fb->height, (unsigned)fb->len);
                 s_frame_info_logged = true;
             }
-#if CONFIG_DALANGS_CAMERA_STATS
-            static int64_t s_last_stats_us;
-            int64_t now_us = esp_timer_get_time();
-            if (now_us - s_last_stats_us > 2000000) {
-                s_last_stats_us = now_us;
-                uint32_t min_v = 0xFFFF;
-                uint32_t max_v = 0;
-                uint32_t sum_r = 0, sum_g = 0, sum_b = 0;
-                uint32_t colorful = 0;
-                uint32_t n = 0;
-                uint16_t *px = (uint16_t *)s_frame;
-                for (size_t i = 0; i < CAM_FRAME_W * CAM_FRAME_H; i += 97) {
-                    uint16_t v = px[i];
-                    uint16_t rgb = (uint16_t)((v >> 8) | (v << 8));
-                    uint8_t r = (uint8_t)(((rgb >> 11) & 0x1F) << 3);
-                    uint8_t g = (uint8_t)(((rgb >> 5) & 0x3F) << 2);
-                    uint8_t b = (uint8_t)((rgb & 0x1F) << 3);
-                    if (rgb < min_v) min_v = rgb;
-                    if (rgb > max_v) max_v = rgb;
-                    uint8_t hi = r > g ? (r > b ? r : b) : (g > b ? g : b);
-                    uint8_t lo = r < g ? (r < b ? r : b) : (g < b ? g : b);
-                    if (hi - lo > 16) colorful++;
-                    sum_r += r;
-                    sum_g += g;
-                    sum_b += b;
-                    n++;
-                }
-                n = n ? n : 1;
-                ESP_LOGI(TAG, "frame R=%u G=%u B=%u min=0x%04X max=0x%04X colorful=%u/%u aec=%u gain=%u sharp=%u",
-                         (unsigned)(sum_r / n), (unsigned)(sum_g / n), (unsigned)(sum_b / n),
-                         (unsigned)min_v, (unsigned)max_v, (unsigned)colorful, (unsigned)n,
-                         (unsigned)s_sensor->status.aec_value, (unsigned)s_sensor->status.agc_gain,
-                         (unsigned)s_sharpness);
-            }
-#endif
             if (s_frame != NULL && fb->width == CAM_SENSOR_W && fb->height == CAM_SENSOR_H) {
                 if (fb->format == PIXFORMAT_YUV422 && fb->len >= CAM_SENSOR_W * CAM_SENSOR_H * 2) {
                     uint32_t luma_sum = 0;
@@ -180,31 +166,26 @@ static void camera_task(void *arg)
                     }
                     camera_software_ae(luma_sum / (luma_n ? luma_n : 1));
 
+
                     yuv422_to_rgb565(fb->buf, (uint16_t *)s_frame);
 
-                    /* Mean neighbour difference of the pre-display image, so the
-                       number stays comparable across capture sizes. */
-                    uint32_t grad = 0;
-                    uint32_t grad_n = 0;
-                    for (size_t y = 0; y < CAM_FRAME_H; y += 4) {
-                        const uint16_t *row = (const uint16_t *)s_frame + y * CAM_FRAME_W;
-                        for (size_t x = 0; x + 1 < CAM_FRAME_W; x += 4) {
-                            int a = (int)(((row[x] >> 5) & 0x3F) << 2);
-                            int b = (int)(((row[x + 1] >> 5) & 0x3F) << 2);
-                            grad += (uint32_t)(a > b ? a - b : b - a);
-                            grad_n++;
+                    if (s_wb_n > 0) {
+                        uint32_t ar = s_wb_r / s_wb_n;
+                        uint32_t ag = s_wb_g / s_wb_n;
+                        uint32_t ab = s_wb_b / s_wb_n;
+                        if (ar + 2 < ag && s_r_gain < 420) {
+                            s_r_gain = (uint16_t)(s_r_gain + 2);
+                        } else if (ar > ag + 2 && s_r_gain > 150) {
+                            s_r_gain = (uint16_t)(s_r_gain - 2);
+                        }
+                        if (ab + 2 < ag && s_b_gain < 420) {
+                            s_b_gain = (uint16_t)(s_b_gain + 2);
+                        } else if (ab > ag + 2 && s_b_gain > 150) {
+                            s_b_gain = (uint16_t)(s_b_gain - 2);
                         }
                     }
-                    s_sharpness = grad_n ? (uint32_t)(grad / grad_n) : 0;
-                    s_frame_id++;
-                } else if (fb->format == PIXFORMAT_RGB565 && fb->len <= CAM_FRAME_BYTES) {
-                    memcpy(s_frame, fb->buf, fb->len);
-#if CAMERA_BYTE_SWAP
-                    uint16_t *pixels = (uint16_t *)s_frame;
-                    for (size_t i = 0; i < fb->len / 2; i++) {
-                        pixels[i] = (uint16_t)((pixels[i] >> 8) | (pixels[i] << 8));
-                    }
-#endif
+                    s_wb_r = s_wb_g = s_wb_b = s_wb_n = 0;
+
                     s_frame_id++;
                 }
             }
@@ -269,10 +250,9 @@ esp_err_t camera_tuner_init(void)
     s_sensor->set_framesize(s_sensor, FRAMESIZE_VGA);
     s_sensor->set_vflip(s_sensor, 0);
     s_sensor->set_hmirror(s_sensor, 0);
-    /* Auto white balance never converges here: measured spread between R, G and B
-       was 36-56 with AWB on versus 3-9 with the fixed daylight gains. */
+    /* Auto white balance never converges here, so the daylight gains are fixed and
+       the WB mode stays adjustable from the UI. */
     s_sensor->set_whitebal(s_sensor, 1);
-    s_sensor->set_wb_mode(s_sensor, 1);
     s_sensor->set_awb_gain(s_sensor, 0);
     s_sensor->set_gain_ctrl(s_sensor, 1);
     s_sensor->set_exposure_ctrl(s_sensor, 1);
@@ -280,13 +260,15 @@ esp_err_t camera_tuner_init(void)
     s_sensor->set_ae_level(s_sensor, 2);
     s_sensor->set_gainceiling(s_sensor, GAINCEILING_128X);
     /* Denoise blurs a 320x240 preview, so trade it for edge sharpening. */
-    int r_denoise = s_sensor->set_denoise ? s_sensor->set_denoise(s_sensor, 0) : -1;
-    int r_sharp = s_sensor->set_sharpness ? s_sensor->set_sharpness(s_sensor, 2) : -1;
-    int r_bpc = s_sensor->set_bpc(s_sensor, 1);
-    int r_wpc = s_sensor->set_wpc(s_sensor, 1);
-    int r_lenc = s_sensor->set_lenc(s_sensor, 1);
-    ESP_LOGI(TAG, "dsp: denoise=%d sharpness=%d bpc=%d wpc=%d lenc=%d (0 = applied)", r_denoise,
-             r_sharp, r_bpc, r_wpc, r_lenc);
+    if (s_sensor->set_denoise) {
+        s_sensor->set_denoise(s_sensor, 0);
+    }
+    if (s_sensor->set_sharpness) {
+        s_sensor->set_sharpness(s_sensor, 2);
+    }
+    s_sensor->set_bpc(s_sensor, 1);
+    s_sensor->set_wpc(s_sensor, 1);
+    s_sensor->set_lenc(s_sensor, 1);
 #if CONFIG_DALANGS_CAMERA_COLORBAR
     s_sensor->set_colorbar(s_sensor, 1);
 #else
@@ -297,10 +279,11 @@ esp_err_t camera_tuner_init(void)
     s_sensor->set_exposure_ctrl(s_sensor, 0);
     s_sensor->set_gain_ctrl(s_sensor, 0);
     s_sensor->set_aec_value(s_sensor, 700);
-    s_sensor->set_agc_gain(s_sensor, 24);
+    s_sensor->set_agc_gain(s_sensor, 20);
 
     s_ready = true;
-    ESP_LOGI(TAG, "%s ready at %dx%d RGB565", s_sensor_name, CAM_FRAME_W, CAM_FRAME_H);
+    ESP_LOGI(TAG, "%s ready: %dx%d to %dx%d", s_sensor_name, CAM_SENSOR_W, CAM_SENSOR_H,
+             CAM_FRAME_W, CAM_FRAME_H);
     return ESP_OK;
 }
 
