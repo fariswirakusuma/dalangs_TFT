@@ -1,7 +1,6 @@
-[![Firmware build](https://img.shields.io/github/actions/workflow/status/fariswirakusuma/dalangs_TFT/firmware.yml?branch=main&label=firmware)](https://github.com/fariswirakusuma/dalangs_TFT/actions/workflows/firmware.yml)
+[![Release](https://img.shields.io/badge/release-v0.1.0_pre--release-38BDF8)](https://github.com/fariswirakusuma/dalangs_TFT/releases)
 ![C17](https://img.shields.io/badge/C-C17-00599C)
 ![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v6.1-E7352C)
-![FreeRTOS](https://img.shields.io/badge/FreeRTOS-10.5.1-6E4C13)
 ![LVGL](https://img.shields.io/badge/LVGL-8.4-343741)
 ![wasm3](https://img.shields.io/badge/wasm3-MIT-654FF0)
 
