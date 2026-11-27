@@ -1,0 +1,61 @@
+name: Hardware
+
+# Runs on a self-hosted runner that has the board attached. Triggered by a
+# successful Firmware run on push, so the bytes flashed are exactly the bytes CI
+# built and verified.
+#
+# Deliberately no pull_request trigger: a self-hosted runner executes on the
+# owner's machine, and fork code must never reach it.
+on:
+  workflow_run:
+    workflows: ["Firmware"]
+    types: [completed]
+  workflow_dispatch:
+
+concurrency:
+  group: hardware-board
+  cancel-in-progress: false
+
+jobs:
+  board-smoke:
+    name: Board smoke test
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
+    # The runner is registered with both labels; see docs/TESTING.md.
+    runs-on: [self-hosted, esp32s3]
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Fetch the firmware that CI validated
+        if: github.event_name == 'workflow_run'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh run download ${{ github.event.workflow_run.id }}
+          --repo ${{ github.repository }}
+          --name dalangs-tft-firmware
+          --dir download
+
+      - name: Verify the checksum
+        run: cd download && sha256sum -c SHA256SUMS
+
+      - name: Flash and watch the board
+        env:
+          # Set the repository variable HW_PORT when the board is not on ttyACM0.
+          PORT: ${{ vars.HW_PORT }}
+          SECS: 180
+        run: ./scripts/hw_check.sh download/dalangs_tft-factory.bin
+
+      - name: Upload the serial log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: board-serial-log
+          path: /tmp/dalangs_hw.log
+          if-no-files-found: ignore
+          retention-days: 30

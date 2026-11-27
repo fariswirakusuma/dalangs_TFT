@@ -5,7 +5,7 @@ PORT ?= /dev/ttyACM0
 BAUD ?= 460800
 IDF := . "$(IDF_PATH)/export.sh" >/dev/null 2>&1 && idf.py
 
-.PHONY: help setup build wasm test format lint-ui lcd-ili9341 lcd-st7789 lcd-mode0 lcd-mode3 lcd-selftest lcd-selftest-off camera-on camera-off camera-colorbar camera-colorbar-off audit audit-off touch-debug touch-debug-off wasm-smoke wasm-smoke-off flash monitor flash-monitor erase clean distclean menuconfig size doctor
+.PHONY: help setup build wasm test format lint-ui lcd-ili9341 lcd-st7789 lcd-mode0 lcd-mode3 lcd-selftest lcd-selftest-off camera-on camera-off camera-colorbar camera-colorbar-off audit audit-off touch-debug touch-debug-off wasm-smoke wasm-smoke-off hw-check flash monitor flash-monitor erase clean distclean menuconfig size doctor
 
 help:
 	@echo "dalangs_TFT controller"
@@ -27,6 +27,7 @@ help:
 	@echo "  make camera-colorbar test the sensor color bars"
 	@echo "  make touch-debug   log raw/mapped touch coordinates"
 	@echo "  make wasm-smoke    load all wasm applets once at boot"
+	@echo "  make hw-check      flash the factory image and watch the board for 3 min"
 	@echo "  make flash         flash over PORT=$(PORT)"
 	@echo "  make monitor       open the serial monitor"
 	@echo "  make flash-monitor flash and monitor"
@@ -129,6 +130,10 @@ wasm-smoke:
 	@test -f sdkconfig || { echo "Run make setup first."; exit 1; }
 	@sed -i 's/^# CONFIG_DALANGS_WASM_SMOKE_TEST is not set/CONFIG_DALANGS_WASM_SMOKE_TEST=y/' sdkconfig
 	@echo "Wasm smoke test enabled. Run: make build flash monitor"
+
+hw-check:
+	@test -f build/dalangs_tft-factory.bin || { echo "Run: make build, then merge the image (see docs/TESTING.md)."; exit 1; }
+	@PORT=$(PORT) ./scripts/hw_check.sh build/dalangs_tft-factory.bin
 
 wasm-smoke-off:
 	@test -f sdkconfig || { echo "Run make setup first."; exit 1; }

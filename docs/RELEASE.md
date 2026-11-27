@@ -9,7 +9,8 @@ you keep is worth flashing, and that the one you go back to still exists.
 | Gate | Who | Proves |
 | --- | --- | --- |
 | CI on the tag | GitHub Actions | The tagged commit builds, host tests pass, lint passes, the image parses, the size fits, the version matches the tag |
-| Board checklist | you, on hardware | Camera, touch, display, temperature, and a runtime soak all behave |
+| Board smoke job | self-hosted runner with the board | Boot, wiring, camera capture, frame rate and memory stay flat |
+| Board checklist | you, on hardware | Colour, focus, touch feel, panel look, and a longer soak |
 
 CI cannot cover the second row: there is no board on the runner. A green CI run
 on a tag means "safe to flash and test", not "proven in use". Do not tag before
@@ -39,7 +40,7 @@ Rules the release job checks:
 | File | Why |
 | --- | --- |
 | `dalangs_tft-factory.bin` | bootloader, partition table and app merged; flash at offset 0 |
-| `SHA256SUMS` | verify the download before flashing |
+| `SHA256SUMS` | verify the download before flashing; the board job checks it first |
 | `dalangs_tft.map` | decode a crash address without rebuilding |
 | `dalangs_tft.elf` | same, with symbols |
 
@@ -61,7 +62,9 @@ GitHub release for that tag: tags keep their files permanently.
 
 ## Known limits
 
-- No automatic on-board test yet; the hardware job described in
-  [TESTING.md](TESTING.md) is planned, not implemented.
+- The board smoke job needs the runner online. If it is offline the job queues
+  and the tag waits: flashing an unverified image is worse than waiting.
+- It proves the image boots and runs, not that the camera looks right or that
+  the touch panel feels right. Those stay in [TESTING.md](TESTING.md).
 - A release proves the code, not the wiring. A change to `main/include/pins.h`
   needs the board checklist again even if CI is green.

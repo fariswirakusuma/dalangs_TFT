@@ -35,6 +35,8 @@ static bool s_ready;
    never sees a half written image. */
 static uint8_t *s_frame[2];
 static volatile int s_front;
+static uint32_t s_frame_total;
+static int64_t s_frame_logged_us;
 static uint32_t s_frame_id;
 
 /* The sensor's own white balance never converges and its presets cannot go far
@@ -187,6 +189,15 @@ void camera_tuner_task(void *arg) {
 
                     s_front ^= 1; /* publish the frame just written */
                     s_frame_id++;
+
+                    /* A frame counter every 10 s proves the pipeline is alive;
+                       the hardware smoke test asserts that it keeps growing. */
+                    s_frame_total++;
+                    int64_t now_us = esp_timer_get_time();
+                    if (now_us - s_frame_logged_us > 10000000) {
+                        s_frame_logged_us = now_us;
+                        ESP_LOGI(TAG, "frames: %u", (unsigned)s_frame_total);
+                    }
                 }
             }
             esp_camera_fb_return(fb);

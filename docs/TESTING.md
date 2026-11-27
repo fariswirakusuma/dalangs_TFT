@@ -46,6 +46,36 @@ for 14 days and flashing it needs no offsets:
 esptool --chip esp32s3 -p /dev/ttyACM0 write_flash 0x0 dalangs_tft-factory.bin
 ```
 
+## Automated board smoke test
+
+A self-hosted runner with the board attached takes the artifact that CI just
+built and flashes it:
+
+```sh
+# first time, on the machine with the board:
+#   1. create a runner for this repo and give it the label esp32s3
+#   2. make sure esptool is on PATH for the runner's user (~/.espressif export)
+#   3. set the repository variable HW_PORT if the board is not on /dev/ttyACM0
+./scripts/hw_check.sh build/dalangs_tft-factory.bin
+```
+
+`make hw-check` runs the same script locally. It flashes, waits for the USB
+device to re-enumerate, watches the serial line for three minutes with
+`stty raw` and `timeout`, and fails on any of:
+
+| Check | Failure means |
+| --- | --- |
+| `assert`, `Guru Meditation`, `CORRUPT`, `share GPIO` | firmware aborted |
+| `MAIN: ready:` missing | init never finished |
+| `pin audit: ... no conflicts` missing | the wiring audit did not run |
+| `CAMERA: first frame` missing | camera init or capture is dead |
+| frame counter not growing between samples | capture stalled |
+| two `leak watch` samples with a falling number | memory leak |
+
+The job covers boot, wiring, capture and leaks. It cannot judge colour, focus or
+how the panel looks, and it cannot press the touch panel: those stay in the
+manual checklist below.
+
 ## Hardware acceptance
 
 Run these in order after flashing. Record the result in the PR.
