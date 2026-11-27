@@ -39,6 +39,11 @@ BOARD_SHOTS = {
     "WhatsApp Image 2026-11-27 at 7.48.33 AM.jpeg": "panel-front",
 }
 
+# The ESP32 board fills the frame at an angle, so its crop is a plain box given
+# as fractions of the source: left, top, right, bottom.
+BOARD_SHOT = ("board-esp", (0.26, 0.35, 0.94, 0.69))
+BOARD_SHOT_WIDTH = 640
+
 # The video is handheld, so a per-frame screen crop would flicker. A plain
 # scaled clip of the segment where tabs are tapped reads better and stays small.
 GIF_SEGMENT = (9, 15)
@@ -128,6 +133,17 @@ def board_crop(path):
     return cv2.resize(crop, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
 
 
+def fraction_crop(path, box, width):
+    image = cv2.imread(str(path))
+    if image is None:
+        return None
+    h, w = image.shape[:2]
+    left, top, right, bottom = box
+    crop = image[int(top * h) : int(bottom * h), int(left * w) : int(right * w)]
+    scale = width / crop.shape[1]
+    return cv2.resize(crop, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+
+
 def make_gif(video):
     out = OUT / "demo.gif"
     start, end = GIF_SEGMENT
@@ -178,6 +194,14 @@ def main():
             continue
         cv2.imwrite(str(OUT / f"{out_name}.jpg"), crop, [cv2.IMWRITE_JPEG_QUALITY, 90])
         print(f"ok      {out_name}.jpg")
+
+    board_source = next(iter(sorted(SRC_IMAGES.glob(f"{BOARD_SHOT[0]}.*"))), None)
+    if board_source is not None:
+        crop = fraction_crop(board_source, BOARD_SHOT[1], BOARD_SHOT_WIDTH)
+        cv2.imwrite(str(OUT / f"{BOARD_SHOT[0]}.jpg"), crop, [cv2.IMWRITE_JPEG_QUALITY, 90])
+        print(f"ok      {BOARD_SHOT[0]}.jpg")
+    else:
+        print(f"note    no {BOARD_SHOT[0]}.* in assets/image, board photo skipped")
 
     videos = sorted(SRC_VIDEO.glob("*.mp4"))
     if videos:
