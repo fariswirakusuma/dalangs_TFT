@@ -49,7 +49,9 @@ jobs:
           # Set the repository variable HW_PORT when the board is not on ttyACM0.
           PORT: ${{ vars.HW_PORT }}
           SECS: 180
-        run: ./scripts/hw_check.sh download/dalangs_tft-factory.bin
+          # A manual dispatch has no upstream run, so it flashes a local build.
+          IMAGE: ${{ github.event_name == 'workflow_run' && 'download/dalangs_tft-factory.bin' || 'build/dalangs_tft-factory.bin' }}
+        run: ./scripts/hw_check.sh "$IMAGE"
 
       - name: Upload the serial log
         if: always()
