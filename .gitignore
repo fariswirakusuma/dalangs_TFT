@@ -22,3 +22,6 @@
 # Local overrides
 .env
 /secrets.h
+
+# Raw phone photos and video for docs/images are workstation input.
+assets/

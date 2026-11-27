@@ -48,8 +48,13 @@ chore(ci): cache managed components
 
 ## Releases
 
-- Tag `vMAJOR.MINOR.PATCH` from `main`.
-- Attach `build/dalangs_tft.bin`, `bootloader.bin`, `partition-table.bin`, and the applet `.wasm` files.
+- Tag `vMAJOR.MINOR.PATCH` from `main`, and only when the board checklist in
+  [TESTING.md](TESTING.md) is green. The full procedure is in
+  [RELEASE.md](RELEASE.md).
+- The tag must equal `APP_VERSION` in `main/include/app_config.h`; CI fails the
+  release when it does not.
+- Releases carry the merged factory image plus `SHA256SUMS`, so a rollback is a
+  single `write_flash 0x0`.
 - Release notes list hardware assumptions and known limitations.
 
 ## What not to commit

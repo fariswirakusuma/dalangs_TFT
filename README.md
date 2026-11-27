@@ -6,14 +6,21 @@ tiny freestanding `.wasm` module that declares its controls or draws to a canvas
 
 Built with **ESP-IDF v6.1 + CMake + Ninja + LVGL 8.4 + wasm3**.
 
+![dalangs_TFT running on the board](docs/images/demo.gif)
+
 ## Status
+
+Pre-release `0.1.0`: the UI, touch, Wasm applets and camera tuning work; the
+camera preview is usable but noisy, and the details are in
+[Known issues](docs/KNOWN_ISSUES.md).
 
 | Part | State |
 | --- | --- |
 | #3 Touch-screen camera tuner | Implemented: live preview, three sliders, four effects, reset |
-| #4 Wasm UI switcher and profiler | Implemented: native status bar, five applet tabs, live/draw/bench applets |
-| Host tests and firmware build | Passing |
-| On-board validation | Pending; checklist in [docs/TESTING.md](docs/TESTING.md) |
+| #4 Wasm UI switcher and profiler | Implemented: five applet tabs, live/draw/bench applets, live CPU badge |
+| Camera preview | Works, but noisy in dim light and colour-shifted by a strongly coloured scene: [Known issues](docs/KNOWN_ISSUES.md) |
+| Host tests and firmware build | Passing, enforced by CI |
+| On-board validation | Manual checklist in [docs/TESTING.md](docs/TESTING.md) |
 
 ## Hardware
 
@@ -32,6 +39,15 @@ RES=IO0 (shared with BOOT), DC=IO45, CS=IO47, BLK=IO21. The XPT2046 adds T_CS=IO
 its CLK/DIN share the LCD bus. The exact wiring is in
 [docs/HARDWARE.md](docs/HARDWARE.md). All GPIO numbers live in
 [`main/include/pins.h`](main/include/pins.h).
+
+## Screens
+
+| | |
+| --- | --- |
+| ![Bench page](docs/images/ui-bench.jpg) | ![Live camera](docs/images/ui-live.jpg) |
+| BENCH: memory, core temperature, CPU per core, Wasm load time | LIVE: camera preview with the touch crosshair |
+| ![Effects page](docs/images/ui-fx.jpg) | ![Draw page](docs/images/ui-draw.jpg) |
+| FX: presets, the active one stays highlighted | DRAW: canvas applet over the preview |
 
 ## Quick start
 
@@ -148,6 +164,8 @@ board is required. Hardware checks are in [docs/TESTING.md](docs/TESTING.md).
 ## Documentation
 
 - [Hardware and wiring](docs/HARDWARE.md)
+- [Known issues](docs/KNOWN_ISSUES.md)
+- [Release and rollback](docs/RELEASE.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Wasm ABI](docs/WASM_ABI.md)
 - [Testing](docs/TESTING.md)

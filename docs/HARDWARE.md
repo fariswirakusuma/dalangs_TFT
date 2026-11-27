@@ -1,5 +1,7 @@
 # Hardware
 
+![Board front](images/board-front.jpg)
+
 ## Board
 
 - **Board**: ESP32-S3-CAM N16R8, dual USB-C, onboard microSD and camera FPC.
@@ -48,7 +50,11 @@ there and update this table in the same commit.
 | T_DIN | 41 | Shared with LCD MOSI |
 | T_DO | 14 | Shared with LCD MISO |
 
-### Camera (DVP)
+## Board back
+
+![Board back](images/board-back.jpg)
+
+## Camera (DVP)
 
 | Signal | GPIO | Signal | GPIO |
 | --- | --- | --- | --- |
@@ -138,6 +144,8 @@ The UI is 320x240 landscape, rotated from the native 240x320 panel. The rotation
 is applied by `esp_lvgl_port` from `LCD_LANDSCAPE`. If the image is upside down,
 set `LCD_MIRROR_X` or `LCD_MIRROR_Y`; if the image is sideways, check that
 `LCD_LANDSCAPE` is still `1`.
+
+![Board back](images/board-back.jpg)
 
 ## Camera
 

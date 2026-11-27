@@ -51,8 +51,9 @@ esptool --chip esp32s3 -p /dev/ttyACM0 write_flash 0x0 dalangs_tft-factory.bin
 Run these in order after flashing. Record the result in the PR.
 
 1. **Boot**: monitor shows the LCD controller, resolution, camera sensor name,
-   and free memory. No reboot loop.
-2. **Display**: status bar text is readable, not mirrored, not color-inverted.
+   and free memory, plus `pin audit: N GPIO in use, no conflicts`. No reboot loop.
+2. **Display**: the CPU badge and tab icons are readable, not mirrored, not
+   colour inverted.
 3. **Touch**: tapping each tab selects it. The pointer lands under the finger.
 4. **Sliders**: Brightness, Contrast, and Saturation change the preview live.
 5. **FX**: Normal, Grayscale, Sepia, Negative apply, and Reset restores defaults.
@@ -60,7 +61,9 @@ Run these in order after flashing. Record the result in the PR.
 7. **Draw**: dragging leaves a continuous line; lifting the finger ends it.
 8. **Bench**: SRAM/PSRAM usage, core temperature, wasm load time, and uptime update every second.
 9. **Profiler**: SRAM and PSRAM values are plausible; WASM time changes per tab.
-10. **Stress**: switch tabs 20 times. Free SRAM after the last switch should be
+10. **Soak**: leave it running for at least 15 minutes; the minute-long
+    `leak watch` lines must keep the same free SRAM and PSRAM.
+11. **Stress**: switch tabs 20 times. Free SRAM after the last switch should be
     within a few KB of the first switch. Watch for a slow downward trend.
 
 ## Troubleshooting
