@@ -1,6 +1,6 @@
 # Hardware
 
-![Board front](images/board-front.jpg)
+![TFT module front](images/panel-front.jpg)
 
 ## Board
 
@@ -50,9 +50,9 @@ there and update this table in the same commit.
 | T_DIN | 41 | Shared with LCD MOSI |
 | T_DO | 14 | Shared with LCD MISO |
 
-## Board back
+## TFT module back
 
-![Board back](images/board-back.jpg)
+![TFT module back](images/panel-back.jpg)
 
 ## Camera (DVP)
 
@@ -145,20 +145,21 @@ is applied by `esp_lvgl_port` from `LCD_LANDSCAPE`. If the image is upside down,
 set `LCD_MIRROR_X` or `LCD_MIRROR_Y`; if the image is sideways, check that
 `LCD_LANDSCAPE` is still `1`.
 
-![Board back](images/board-back.jpg)
-
 ## Camera
 
-The firmware requests `QVGA` (320x240) in `RGB565` with two PSRAM frame buffers.
-This avoids JPEG decoding and matches the screen size. The sensor is detected by
-PID and logged at boot. A missing camera does not crash the UI; the preview stays
-black and the tuner still responds.
+The firmware captures `VGA` (640x480) in `YUV422`, converts to `RGB565` and
+averages each 2x2 block down to 320x240, which fits the screen exactly and needs
+no JPEG decoder. One driver frame buffer is used with `CAMERA_GRAB_WHEN_EMPTY`,
+so capture follows the consumer instead of streaming VGA into PSRAM at the
+sensor's own rate. The sensor is detected by PID and logged at boot. A missing
+camera does not crash the UI; the preview stays blank and the tuner still
+responds.
 
 If the image is mirrored or upside down, change the `set_vflip` / `set_hmirror`
 calls in `camera_tuner.c`. They are orientation settings, not wiring faults.
 
-The preview is captured at VGA and averaged down to 320x240 in `camera_tuner.c`,
-because the sensor's own QVGA scaler is noticeably soft.
+The sensor's own QVGA scaler is noticeably soft: mean neighbour difference 2-3
+against 19-36 for the VGA capture averaged here.
 
 The OV5640 on this board never applies its own auto exposure and its auto white
 balance does not converge, so both are closed in software: the gain follows the

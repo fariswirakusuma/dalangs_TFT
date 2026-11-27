@@ -34,8 +34,9 @@ SCREEN_SHOTS = {
 
 # Photos of the board itself: no screen to straighten, so crop the red PCB.
 BOARD_SHOTS = {
-    "WhatsApp Image 2026-11-27 at 7.48.32 AM (3).jpeg": "board-back",
-    "WhatsApp Image 2026-11-27 at 7.48.33 AM.jpeg": "board-front",
+    # These two are the TFT module itself, not the ESP32 board.
+    "WhatsApp Image 2026-11-27 at 7.48.32 AM (3).jpeg": "panel-back",
+    "WhatsApp Image 2026-11-27 at 7.48.33 AM.jpeg": "panel-front",
 }
 
 # The video is handheld, so a per-frame screen crop would flicker. A plain

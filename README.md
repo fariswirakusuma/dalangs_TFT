@@ -40,10 +40,10 @@ its CLK/DIN share the LCD header. The exact wiring is in
 [docs/HARDWARE.md](docs/HARDWARE.md). All GPIO numbers live in
 [`main/include/pins.h`](main/include/pins.h).
 
-| Board front | Board back |
+| TFT module front | TFT module back |
 | --- | --- |
-| ![Board front](docs/images/board-front.jpg) | ![Board back](docs/images/board-back.jpg) |
-| 2.8 inch SPI panel on the red header, XPT2046 on the same bus | ESP32-S3-WROOM-1 N16R8, OV5640 on the DVP connector |
+| ![TFT module front](docs/images/panel-front.jpg) | ![TFT module back](docs/images/panel-back.jpg) |
+| 2.8 inch 320x240 SPI panel on the board's LCD header | FPC tail and the touch controller pads |
 
 ## Screens
 
