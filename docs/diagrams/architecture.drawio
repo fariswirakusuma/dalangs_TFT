@@ -1,0 +1,93 @@
+<mxfile host="app.diagrams.net" agent="dalangs_TFT" version="24.7.17">
+  <diagram id="architecture" name="Pipeline">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="560" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="lane_cam" value="Core 1: capture task (created in main.c)" style="swimlane;startSize=28;rounded=1;arcSize=6;html=1;fillColor=#eef4fb;strokeColor=#6c8ebf;verticalAlign=top;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="30" y="40" width="270" height="350" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_ui" value="Core 0: LVGL task (render, touch, wasm)" style="swimlane;startSize=28;rounded=1;arcSize=6;html=1;fillColor=#f5f5f5;strokeColor=#666666;verticalAlign=top;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="330" y="40" width="330" height="480" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_periph" value="Peripherals" style="swimlane;startSize=28;rounded=1;arcSize=6;html=1;fillColor=#fff6e6;strokeColor=#d79b00;verticalAlign=top;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="690" y="40" width="180" height="320" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sensor" value="OV5640&lt;br&gt;DVP, 640x480 YUV422" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="lane_cam">
+          <mxGeometry x="40" y="45" width="190" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="dma" value="DMA into one frame buffer&lt;br&gt;CAMERA_GRAB_WHEN_EMPTY" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="lane_cam">
+          <mxGeometry x="40" y="120" width="190" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="conv" value="YUV to RGB565&lt;br&gt;2x2 box downscale to 320x240&lt;br&gt;software AE and WB" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="lane_cam">
+          <mxGeometry x="40" y="195" width="190" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="bufs" value="preview buffers x2 in PSRAM&lt;br&gt;front / back swap per frame" style="shape=cylinder3;boundedLbl=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="lane_cam">
+          <mxGeometry x="40" y="300" width="190" height="46" as="geometry" />
+        </mxCell>
+
+        <mxCell id="canvas_read" value="canvas or image object&lt;br&gt;reads the front buffer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="lane_ui">
+          <mxGeometry x="60" y="45" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="compose" value="LVGL compose&lt;br&gt;SPI 40 MHz flush" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="lane_ui">
+          <mxGeometry x="60" y="120" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="indev" value="touch indev&lt;br&gt;XPT2046, raw to screen" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="lane_ui">
+          <mxGeometry x="60" y="195" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="chrome" value="native chrome: tabs, sliders,&lt;br&gt;buttons, CPU badge" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf" vertex="1" parent="lane_ui">
+          <mxGeometry x="60" y="270" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="wasm" value="wasm3 applet (sandboxed)&lt;br&gt;app_init declares widgets&lt;br&gt;app_event sends camera params&lt;br&gt;app_tick draws to the canvas" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6" vertex="1" parent="lane_ui">
+          <mxGeometry x="40" y="345" width="250" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sccb_note" value="SCCB on I2C1&lt;br&gt;SDA 4, SCL 5" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#475569;fontSize=10" vertex="1" parent="lane_periph">
+          <mxGeometry x="15" y="262" width="150" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="lcd" value="ILI9341 panel&lt;br&gt;320x240, SPI2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656" vertex="1" parent="lane_periph">
+          <mxGeometry x="15" y="45" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="tsc" value="XPT2046 touch&lt;br&gt;same SPI2 bus, own CS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656" vertex="1" parent="lane_periph">
+          <mxGeometry x="15" y="195" width="150" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_sensor_dma" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block" edge="1" parent="lane_cam" source="sensor" target="dma">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_dma_conv" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block" edge="1" parent="lane_cam" source="dma" target="conv">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_conv_bufs" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block" edge="1" parent="lane_cam" source="conv" target="bufs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_bufs_read" value="published frame" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.5" edge="1" parent="1" source="bufs" target="canvas_read">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_read_compose" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block" edge="1" parent="lane_ui" source="canvas_read" target="compose">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_compose_lcd" value="SPI" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.5" edge="1" parent="1" source="compose" target="lcd">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_tsc_indev" value="SPI" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;exitX=0;exitY=0.5;entryX=1;entryY=0.5" edge="1" parent="1" source="tsc" target="indev">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_indev_chrome" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block" edge="1" parent="lane_ui" source="indev" target="chrome">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_chrome_wasm" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block" edge="1" parent="lane_ui" source="chrome" target="wasm">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_wasm_conv" value="camera params" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;dashed=1;exitX=0;exitY=0.5;entryX=0.5;entryY=1" edge="1" parent="1" source="wasm" target="conv">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_i2c_sensor" value="sensor registers" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;dashed=1;exitX=0;exitY=0.5;entryX=0.5;entryY=1" edge="1" parent="1" source="i2c" target="conv">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

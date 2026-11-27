@@ -1,3 +1,13 @@
+<p>
+  <a href="https://github.com/fariswirakusuma/dalangs_TFT/releases"><img alt="Release" src="https://img.shields.io/github/v/release/fariswirakusuma/dalangs_TFT?include_prereleases&label=release&color=38bdf8"></a>
+  <img alt="Firmware build" src="https://img.shields.io/github/actions/workflow/status/fariswirakusuma/dalangs_TFT/firmware.yml?branch=main&label=firmware">
+  <img alt="C17" src="https://img.shields.io/badge/C-C17-00599C?logo=c&logoColor=white">
+  <img alt="ESP-IDF v6.1" src="https://img.shields.io/badge/ESP--IDF-v6.1-E7352C">
+  <img alt="FreeRTOS 10.5.1" src="https://img.shields.io/badge/FreeRTOS-10.5.1-6E4C13?logo=freertos&logoColor=white">
+  <img alt="LVGL 8.4" src="https://img.shields.io/badge/LVGL-8.4-343741">
+  <img alt="wasm3" src="https://img.shields.io/badge/wasm3-MIT-654FF0">
+</p>
+
 # dalangs_TFT
 
 A touch-screen camera tuner and a small Wasm UI playground for the ESP32-S3.
@@ -101,12 +111,21 @@ last Wasm load time in milliseconds.
 
 ## How it works
 
-```text
-camera task (core 1) -> PSRAM RGB565 frame -> LVGL image
-touch -> LVGL -> native tabs/sliders/buttons -> wasm app_event -> sensor_t
-wasm app_init -> ui_slider/ui_button descriptors -> native LVGL widgets
-wasm app_tick/app_touch -> canvas imports -> chroma-keyed LVGL canvas
-```
+![Pipeline: capture on core 1, UI and Wasm on core 0](docs/images/architecture.svg)
+
+The diagram above is generated from an editable draw.io file:
+[`docs/diagrams/architecture.drawio`](docs/diagrams/architecture.drawio). Open it
+in [draw.io](https://app.diagrams.net) to change the pipeline, then refresh the
+image with `python3 scripts/drawio_to_svg.py docs/diagrams/architecture.drawio
+docs/images/architecture.svg`.
+
+Capture runs on core 1: the sensor fills a VGA YUV422 frame, `camera_tuner`
+converts it to RGB565, averages it down 2x2 to 320x240 and publishes it into one
+of two PSRAM buffers. Core 0 owns everything a user sees: LVGL composites that
+frame, the touch panel drives tabs, sliders and buttons, and each applet is a
+wasm3 module that declares widgets at init, receives events, and draws to the
+canvas in its tick. Camera parameters set from an applet are applied through the
+sensor's SCCB bus.
 
 The firmware embeds five small `.wasm` binaries. wasm3 parses and instantiates
 the selected module, links a fixed host ABI, and calls `app_init`. Switching
