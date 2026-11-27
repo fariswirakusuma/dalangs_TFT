@@ -16,7 +16,7 @@ static const char *TAG = "MONITOR";
 static temperature_sensor_handle_t s_temp_sensor;
 static uint64_t s_prev_cpu_us;
 static uint64_t s_prev_busy_us[2];
-static uint8_t s_last_cpu[3];
+static uint8_t s_last_cpu[2];
 
 void system_monitor_init(void) {
     if (s_temp_sensor != NULL) {
@@ -55,7 +55,7 @@ void system_monitor_read(system_metrics_t *out) {
     out->wasm_load_ms = (uint8_t)wasm_host_last_load_ms();
     int64_t now_us = esp_timer_get_time();
     out->uptime_h = (uint8_t)(now_us / 3600000000LL);
-    out->core_temp_c = SYSTEM_TEMP_UNAVAILABLE;
+    out->core_temp_cdeg = SYSTEM_TEMP_UNAVAILABLE;
 
     if (s_prev_cpu_us != 0 && (uint64_t)now_us > s_prev_cpu_us &&
         (uint64_t)now_us - s_prev_cpu_us >= 500000) {
@@ -83,7 +83,6 @@ void system_monitor_read(system_metrics_t *out) {
             uint32_t pct = (uint32_t)((delta * 100) / elapsed);
             s_last_cpu[core] = (uint8_t)(pct > 100 ? 100 : pct);
         }
-        s_last_cpu[2] = (uint8_t)((s_last_cpu[0] + s_last_cpu[1]) / 2);
         s_prev_cpu_us = (uint64_t)now_us;
         s_prev_busy_us[0] = busy[0];
         s_prev_busy_us[1] = busy[1];
@@ -95,13 +94,12 @@ void system_monitor_read(system_metrics_t *out) {
 
     out->cpu0_pct = s_last_cpu[0];
     out->cpu1_pct = s_last_cpu[1];
-    out->cpu_avg_pct = s_last_cpu[2];
 
     if (s_temp_sensor != NULL) {
         float celsius = 0;
         esp_err_t err = temperature_sensor_get_celsius(s_temp_sensor, &celsius);
         if (err == ESP_OK) {
-            out->core_temp_c = (int8_t)lrintf(celsius);
+            out->core_temp_cdeg = (int16_t)lrintf(celsius * 100.0f);
         } else {
             static bool logged;
             if (!logged) {

@@ -110,13 +110,17 @@ static void update_bench(void) {
     snprintf(buf, sizeof(buf), "%u.%u / %u MB", psram_used16 / 16, (psram_used16 % 16) * 10 / 16,
              psram_total);
     lv_label_set_text(s_bench_psram, buf);
-    if (m.core_temp_c == SYSTEM_TEMP_UNAVAILABLE) {
+    if (m.core_temp_cdeg == SYSTEM_TEMP_UNAVAILABLE) {
         lv_label_set_text(s_bench_temp, "n/a");
     } else {
-        lv_label_set_text_fmt(s_bench_temp, "%d C", (int)m.core_temp_c);
+        int cdeg = m.core_temp_cdeg;
+        int mag = cdeg < 0 ? -cdeg : cdeg;
+        lv_label_set_text_fmt(s_bench_temp, "%s%d.%02d C", cdeg < 0 ? "-" : "", mag / 100,
+                              mag % 100);
     }
+    unsigned cpu_avg = ((unsigned)m.cpu0_pct + m.cpu1_pct) / 2;
     lv_label_set_text_fmt(s_bench_cpu, "%u / %u / %u %%", (unsigned)m.cpu0_pct,
-                          (unsigned)m.cpu1_pct, (unsigned)m.cpu_avg_pct);
+                          (unsigned)m.cpu1_pct, cpu_avg);
     lv_label_set_text_fmt(s_bench_wasm, "%u ms", (unsigned)m.wasm_load_ms);
     lv_label_set_text_fmt(s_bench_uptime, "%u h", (unsigned)m.uptime_h);
 }
@@ -369,17 +373,24 @@ static void status_timer_cb(lv_timer_t *timer) {
     if (++s_audit_tick % 60 == 0) {
         system_metrics_t m;
         system_monitor_read(&m);
-        ESP_LOGI(TAG, "leak watch: internal %u KB free, PSRAM %u KB free, cpu %u/%u avg %u%%",
+        int cdeg = m.core_temp_cdeg;
+        int mag = cdeg < 0 ? -cdeg : cdeg;
+        ESP_LOGI(TAG,
+                 "leak watch: internal %u KB free, PSRAM %u KB free, cpu %u/%u avg %u%%, "
+                 "temp %s%d.%02d C",
                  (unsigned)(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024),
                  (unsigned)(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024),
-                 (unsigned)m.cpu0_pct, (unsigned)m.cpu1_pct, (unsigned)m.cpu_avg_pct);
+                 (unsigned)m.cpu0_pct, (unsigned)m.cpu1_pct,
+                 (unsigned)(((unsigned)m.cpu0_pct + m.cpu1_pct) / 2), cdeg < 0 ? "-" : "",
+                 mag / 100, mag % 100);
     }
 #endif
 
     if (s_cpu_label != NULL) {
         system_metrics_t m;
         system_monitor_read(&m);
-        lv_label_set_text_fmt(s_cpu_label, "CPU %u%%", (unsigned)m.cpu_avg_pct);
+        lv_label_set_text_fmt(s_cpu_label, "CPU %u%%",
+                              (unsigned)(((unsigned)m.cpu0_pct + m.cpu1_pct) / 2));
     }
 
     update_bench();

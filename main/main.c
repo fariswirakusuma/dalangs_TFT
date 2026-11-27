@@ -42,7 +42,6 @@ static void start_camera_task(void) {
     }
 }
 
-#if CONFIG_DALANGS_FIRMWARE_AUDIT
 /*
  * Wiring audit: every GPIO the firmware drives, in one table. A duplicate is a
  * configuration bug that silently breaks two devices, and a reserved pin means
@@ -94,6 +93,7 @@ static void pin_audit(void) {
     ESP_LOGI(TAG, "pin audit: %d GPIO in use, no conflicts", used);
 }
 
+#if CONFIG_DALANGS_FIRMWARE_AUDIT
 static void firmware_audit(void) {
     ESP_LOGI(TAG, "heap integrity: %s", heap_caps_check_integrity_all(true) ? "OK" : "CORRUPT");
     ESP_LOGI(TAG,
