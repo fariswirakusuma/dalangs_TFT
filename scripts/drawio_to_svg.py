@@ -134,7 +134,9 @@ def edge_route(cells, cell):
     sx, sy, sw, sh = absolute(cells, source)
     tx, ty, tw, th = absolute(cells, target)
     style = style_map(cell["style"])
-    exit_x, exit_y = float(style.get("exitX", 0.5)), float(style.get("exitY", 0.5))
+    # A top-down flow leaves a box from its bottom edge; using the centre would
+    # draw the wire straight through the label.
+    exit_x, exit_y = float(style.get("exitX", 0.5)), float(style.get("exitY", 1.0))
     entry_x, entry_y = float(style.get("entryX", 0.5)), float(style.get("entryY", 0.0))
     start = (sx + sw * exit_x, sy + sh * exit_y)
     end = (tx + tw * entry_x, ty + th * entry_y)
