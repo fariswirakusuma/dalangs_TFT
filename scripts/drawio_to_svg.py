@@ -171,7 +171,7 @@ def render(path):
             min_x, min_y = min(min_x, x), min(min_y, y)
             max_x, max_y = max(max_x, x + w), max(max_y, y + h)
 
-    pad = 24
+    pad = 14
     width, height = max_x - min_x + 2 * pad, max_y - min_y + 2 * pad
     body = [f'<rect width="{width:.0f}" height="{height:.0f}" fill="#ffffff"/>']
     body.append(f'<g transform="translate({pad - min_x:.1f},{pad - min_y:.1f})">')

@@ -1,12 +1,9 @@
-<p>
-  <a href="https://github.com/fariswirakusuma/dalangs_TFT/releases"><img alt="Release" src="https://img.shields.io/github/v/release/fariswirakusuma/dalangs_TFT?include_prereleases&label=release&color=38bdf8"></a>
-  <img alt="Firmware build" src="https://img.shields.io/github/actions/workflow/status/fariswirakusuma/dalangs_TFT/firmware.yml?branch=main&label=firmware">
-  <img alt="C17" src="https://img.shields.io/badge/C-C17-00599C?logo=c&logoColor=white">
-  <img alt="ESP-IDF v6.1" src="https://img.shields.io/badge/ESP--IDF-v6.1-E7352C">
-  <img alt="FreeRTOS 10.5.1" src="https://img.shields.io/badge/FreeRTOS-10.5.1-6E4C13?logo=freertos&logoColor=white">
-  <img alt="LVGL 8.4" src="https://img.shields.io/badge/LVGL-8.4-343741">
-  <img alt="wasm3" src="https://img.shields.io/badge/wasm3-MIT-654FF0">
-</p>
+[![Firmware build](https://img.shields.io/github/actions/workflow/status/fariswirakusuma/dalangs_TFT/firmware.yml?branch=main&label=firmware)](https://github.com/fariswirakusuma/dalangs_TFT/actions/workflows/firmware.yml)
+![C17](https://img.shields.io/badge/C-C17-00599C)
+![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v6.1-E7352C)
+![FreeRTOS](https://img.shields.io/badge/FreeRTOS-10.5.1-6E4C13)
+![LVGL](https://img.shields.io/badge/LVGL-8.4-343741)
+![wasm3](https://img.shields.io/badge/wasm3-MIT-654FF0)
 
 # dalangs_TFT
 

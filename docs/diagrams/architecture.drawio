@@ -63,7 +63,7 @@
         <mxCell id="e_conv_bufs" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block" edge="1" parent="lane_cam" source="conv" target="bufs">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e_bufs_read" value="published frame" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.5" edge="1" parent="1" source="bufs" target="canvas_read">
+        <mxCell id="e_bufs_read" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;exitX=1;exitY=0.5;entryX=0;entryY=0.5" edge="1" parent="1" source="bufs" target="canvas_read">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="e_read_compose" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block" edge="1" parent="lane_ui" source="canvas_read" target="compose">
@@ -81,7 +81,7 @@
         <mxCell id="e_chrome_wasm" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block" edge="1" parent="lane_ui" source="chrome" target="wasm">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e_wasm_conv" value="camera params" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;dashed=1;exitX=0;exitY=0.5;entryX=0.5;entryY=1" edge="1" parent="1" source="wasm" target="conv">
+        <mxCell id="e_wasm_conv" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;dashed=1;exitX=0;exitY=0.5;entryX=0.5;entryY=1" edge="1" parent="1" source="wasm" target="conv">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="e_i2c_sensor" value="sensor registers" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;dashed=1;exitX=0;exitY=0.5;entryX=0.5;entryY=1" edge="1" parent="1" source="i2c" target="conv">
