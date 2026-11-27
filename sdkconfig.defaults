@@ -49,3 +49,6 @@ CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER=y
 
 CONFIG_LV_COLOR_CHROMA_KEY_HEX=0xFF00FF
 CONFIG_LV_FONT_MONTSERRAT_16=y
+
+# LVGL ships ~600 example sources; nothing here uses them and they dominate build time.
+CONFIG_LV_BUILD_EXAMPLES=n
